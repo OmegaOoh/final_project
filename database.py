@@ -25,6 +25,12 @@ class Database:
     def insert(self, table: "Table Class"):
         self.__tables.append(table)
 
+    def search(self, table_name: str):
+        for i in self.__tables:
+            if i.table_name == table_name:
+                return i
+        return None
+
     def __str__(self):
         output = ''
         for i in self.__tables:
@@ -33,7 +39,7 @@ class Database:
 
 
 class Table:
-    def __init__(self, table_name: str, data: list):
+    def __init__(self, table_name: str, data: list = []):
         self.__table_name = table_name
         self.__data = data
 
@@ -43,23 +49,30 @@ class Table:
 
     @property
     def data(self):
-        return self.data
+        return self.__data
 
     def insert_data(self, new_data):
         if isinstance(new_data, list):
             for i in new_data:
                 self.__data.append(i)
         else:
-            self.__data.append(i)
+            self.__data.append(new_data)
+
+    def search(self, key, search_query):
+        for i in self.__data:
+            if i[key] == search_query:
+                return i
+        return None
 
     def __str__(self):
         return f'{self.__table_name} : {self.__data}'
 
 
-# Test code
-test_table = Table('person', persons)
-test_table2 = Table('test', [{"1": 1, "2": 2, "3": 3}])
-my_db = Database()
-my_db.insert(test_table)
-my_db.insert(test_table2)
-print(my_db)
+# # Test code
+# test_table = Table('person', persons)
+# test_table2 = Table('test', [{"1": 1, "2": 2, "3": 3}])
+# my_db = Database()
+# my_db.insert(test_table)
+# my_db.insert(test_table2)
+# print(my_db)
+
