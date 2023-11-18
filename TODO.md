@@ -18,6 +18,7 @@
   - Send Invitation to Other Student
   - Add Members to Project
   - Form a Group
+  - Submit Final Project Report
 - Add Menu and Function for Member Student
   - Show Project Detail
   - Modify Project Detail
