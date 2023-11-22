@@ -1,5 +1,38 @@
-# Final project for 2023's 219114/115 Programming I
-* Starting files for part 1
-  - database.py
-  - project_manage.py
-  - persons.csv
+# Final project for 2023's 219114/115 Programming 1
+
+---
+# Senior Project Manager
+### There are three types of persons:
+- Student
+- Faculty
+- Admin
+---
+
+## Person role and Program Interaction
+
+1. ### Admin
+   - Manage Database
+2. ### Student
+   1. #### Lead Student
+      - Create Project
+      - Find members
+      - Send project invitation messages
+      - Send request for advisor messages
+      - submit document
+   2. #### Member
+      - See/Modify Project Detail
+   3. #### Normal Student
+      - See Invitation Message
+      - Accept/Deny Project Invitation
+3. ### Faculty
+   1. #### Advising Faculty
+      - See request to be a supervisor
+      - Send accept/deny response
+      - See project detail
+      - Evaluate Project
+   2. #### Normal Faculties
+      - See request to be a supervisor
+      - Send accept/deny response
+      - Evaluate Project
+
+
