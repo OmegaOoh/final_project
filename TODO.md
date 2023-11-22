@@ -1,17 +1,6 @@
 # Todo List
 
-### Messages
-Table in the database serves as message log.
-- implement messages log which include sender ID, receiver ID, message, document(optional),message type
-- The document key is optional that use to send the Senior Project Report.
-
-Implement Sent Message Function:
-  - Function Input(Message Type, Condition(optional))
-  - Take message input until the all condition is met.
-  - Insert Message into Messages Table.
 ### Project
-- represent as Table
-- including Project Name, Lead Student, Members, Advisor, Status
 - Status of Project includes:
   - 'New' means their proposal didn't get approved by advisor yet.
   - 'Incomplete' means approved but incomplete Project
@@ -19,24 +8,24 @@ Implement Sent Message Function:
 
 ## Role
 ### Admin
-- Read and Moderate all Data
+- Read All Data in Database
+- Remove Request from Database
 
 ### Student
 - Add Menu and Function for Student with no assigned project
   - Create Project
-  - Show Invites (Message with 'Request' type) + Accept/Deny
-  - Read Incoming Messages
+  - Show Invites (From Member_pending_request table with their Name on it) + Accept/Deny
 - Add Menu and Function for Lead Student
   - Show Project Detail
-    - Print out Project Name, Lead Student, Member, Status
+    - Print all Project Detail
   - Modify Project Detail
-    - Modify Project Name
+    - Modify Project Detail
   - Find Member
     - show the list of Name and ID of all student 
   - Request Advisors
-    - insert new message element into messages table with type 'Request'
+    - Add new Request to Advisor_pending_request table
   - Send Invitation to Other Student
-    - insert new message element into messages table with type 'Request' 
+    - Add new Request to Member_pending_request table
     - unavailable after have 2 member in the group
   - Add Members to Project
     - unavailable after have 2 member in the group
@@ -51,17 +40,21 @@ Implement Sent Message Function:
 
 ### Normal Faculty
 - Add Menu and Function for faculty
-  - See Request to be a supervisor (Message with 'Request' type)
-  - Send Deny response to be advisor
+  - See Request to be a supervisor (From Advisor_pending_request table with their Name on it)
+  - Send Accept/Deny response to be advisor
     - insert new message element into messages table with type 'Response'
-    - change request message type to ('Closed')
+    - change its response to 'Accepted' or 'Denied'
   - See detail of all the project
   - Evaluate Project
 
 ### Advising Faculty
 - Add Menu and Function for Advising faculty
   - See Request to be a supervisor
-  - Sent Accept response to be advisor
-  - Send Deny response to be advisor
+  - Send Accept/Deny response to be advisor
+    - insert new message element into messages table with type 'Response'
+    - change its response to 'Accepted' or 'Denied'
   - See detail of all the project
   - Evaluate Projects
+
+
+###### Adding Validation Methods everywhere the program take input from user.
