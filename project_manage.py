@@ -1,5 +1,3 @@
-# BEGIN part 1
-
 # import database module
 import database
 import random
@@ -9,36 +7,17 @@ main_db = database.Database()
 
 # define a function called initializing
 def initializing():
-    # create an object to read an input csv file, persons.csv
-    persons = database.read_csv('persons.csv')
-    # create a 'persons' table
-    persons = database.Table('persons', persons)
-    # add the 'persons' table into the database
-    main_db.insert(persons)
-    # create a 'login' table
-    # the 'login' table has the following keys (attributes):
-    login_table = database.Table('Login')
+    pass
 
-    # add all persons into login Table with its information
-    for i in persons.data:
-        # let a username be a person's first name followed by a dot and the first letter of that person's last name
-        login_info = {'person_id': i['ID'], 'username': i['fist'] + '.' + i['last'][0], 'password': '', 'role': ''}
-        # Generate Password
-        for _ in range(4):
-            login_info['password'] += str(random.randint(0, 9))
-        # Add role
-        if i['type'] == 'student':
-            login_info['role'] = 'Member'
-        elif i['type'] == 'faculty':
-            login_info['role'] = 'Faculty'
-        elif i['type'] == 'admin':
-            login_info['role'] = 'Admin'
-        # create a login table by performing a series of insert operations; each insert adds a dictionary to a list
-        login_table.insert_data(login_info)
+# here are things to do in this function:
 
-    # add the 'login' table into the database
-    main_db.insert(login_table)
+    # create an object to read all csv files that will serve as a persistent state for this program
 
+    # create all the corresponding tables for those csv files
+
+    # see the guide how many tables are needed
+
+    # add all these tables to the database
 
 def login():
     user = input('Please enter your username: ')
@@ -51,26 +30,43 @@ def login():
     if user_dict['password'] == pwd:
         return user_dict['person_id'], user_dict['role']
 
+# here are things to do in this function:
+   # add code that performs a login task
+        # ask a user for a username and password
+        # returns [ID, role] if valid, otherwise returning None
+
+# define a function called exit
+def exit():
+    pass
+
+# here are things to do in this function:
+   # write out all the tables that have been modified to the corresponding csv files
+   # By now, you know how to read in a csv file and transform it into a list of dictionaries. For this project, you also need to know how to do the reverse, i.e., writing out to a csv file given a list of dictionaries. See the link below for a tutorial on how to do this:
+
+   # https://www.pythonforbeginners.com/basics/list-of-dictionaries-to-csv-in-python
+
 
 # make calls to the initializing and login functions defined above
+
 initializing()
 print(main_db.search('Login'))
 val = login()
 print(val)
 
-# END part 1
-
-# CONTINUE to part 2 (to be done for the next due date)
-
 # based on the return value for login, activate the code that performs activities according to the role defined for that person_id
 
 # if val[1] = 'admin':
-    # do admin related activities
-# elif val[1] = 'advisor':
-    # do advisor related activities
-# elif val[1] = 'lead':
-    # do lead related activities
+    # see and do admin related activities
+# elif val[1] = 'student':
+    # see and do student related activities
 # elif val[1] = 'member':
-    # do member related activities
+    # see and do member related activities
+# elif val[1] = 'lead':
+    # see and do lead related activities
 # elif val[1] = 'faculty':
-    # do faculty related activities
+    # see and do faculty related activities
+# elif val[1] = 'advisor':
+    # see and do advisor related activities
+
+# once everyhthing is done, make a call to the exit function
+exit()

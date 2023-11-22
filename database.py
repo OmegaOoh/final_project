@@ -76,3 +76,5 @@ class Table:
 # my_db.insert(test_table2)
 # print(my_db)
 
+
+# modify the code in the Table class so that it supports the update operation where an entry's value associated with a key can be updated
