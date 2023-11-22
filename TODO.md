@@ -1,11 +1,11 @@
 # Todo List
 
-### Project
+## Project
 - Status of Project includes:
   - 'New' means their proposal didn't get approved by advisor yet.
   - 'Incomplete' means approved but incomplete Project
   - 'Completed' mean Advisor approves the project already
-
+---
 ## Role
 ### Admin
 - Read All Data in Database
@@ -24,10 +24,8 @@
     - show the list of Name and ID of all student 
   - Request Advisors
     - Add new Request to Advisor_pending_request table
-  - Send Invitation to Other Student
+  - Send Project Invitation to Other Student
     - Add new Request to Member_pending_request table
-    - unavailable after have 2 member in the group
-  - Add Members to Project
     - unavailable after have 2 member in the group
   - Submit
     - Will be changed according to status of the project
@@ -43,7 +41,7 @@
   - See Request to be a supervisor (From Advisor_pending_request table with their Name on it)
   - Send Accept/Deny response to be advisor
     - insert new message element into messages table with type 'Response'
-    - change its response to 'Accepted' or 'Denied'
+    - change its response key to 'Accepted' or 'Denied'
   - See detail of all the project
   - Evaluate Project
 
@@ -52,9 +50,9 @@
   - See Request to be a supervisor
   - Send Accept/Deny response to be advisor
     - insert new message element into messages table with type 'Response'
-    - change its response to 'Accepted' or 'Denied'
+    - change its response key to 'Accepted' or 'Denied'
   - See detail of all the project
   - Evaluate Projects
+---
 
-
-###### Adding Validation Methods everywhere the program take input from user.
+Adding Validation Methods everywhere the program take input from user.
