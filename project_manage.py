@@ -1,55 +1,69 @@
 # import database module
 import database
-import random
+import os
 
 main_db = database.Database()
 
 
 # define a function called initializing
 def initializing():
-    pass
+    __location__ = os.path.realpath(
+        os.path.join(os.getcwd(), os.path.dirname(__file__)))
+    csv_ls = []
+    for i in os.listdir(__location__):
+        if i.endswith('.csv'):
+            csv_ls.append(i)
 
-# here are things to do in this function:
+    for i in csv_ls:
+        table = database.Table(i[:-4], database.read_csv(i))
+        main_db.insert(table)
 
-    # create an object to read all csv files that will serve as a persistent state for this program
+    if 'Project.csv' not in csv_ls:
+        table = database.Table("Project", {"ID": ''
+                                                            , 'Title': ''
+                                                            , 'Lead': ''
+                                                            , 'Member1': ''
+                                                            , 'Member2': ''
+                                                            , 'Advisor': ''
+                                                            , 'Status': ''})
+        main_db.insert(table)
+    if 'Advisor_pending_request.csv' not in csv_ls:
+        table = database.Table('Advisor_pending_request', {"ProjectID": ''
+                                                                            , "Name": ''
+                                                                            , "Response": ''
+                                                                            , "Response_date": ''})
+        main_db.insert(table)
+    if 'Member_pending_request.csv' not in csv_ls:
+        table = database.Table('Member_pending_request', {"ProjectID": ''
+                                                                            , "Name": ''
+                                                                            , "Response": ''
+                                                                            , "Response_date": ''})
+        main_db.insert(table)
 
-    # create all the corresponding tables for those csv files
-
-    # see the guide how many tables are needed
-
-    # add all these tables to the database
 
 def login():
     user = input('Please enter your username: ')
-    table = main_db.search('Login')
+    table = main_db.search('login')
     user_dict = table.search('username', user)
     if user_dict is None:
         print('user not found')
         return None
     pwd = input('Please enter your password: ')
     if user_dict['password'] == pwd:
-        return user_dict['person_id'], user_dict['role']
+        return user_dict['ID'], user_dict['role']
 
-# here are things to do in this function:
-   # add code that performs a login task
-        # ask a user for a username and password
-        # returns [ID, role] if valid, otherwise returning None
 
 # define a function called exit
 def exit():
-    pass
-
-# here are things to do in this function:
-   # write out all the tables that have been modified to the corresponding csv files
-   # By now, you know how to read in a csv file and transform it into a list of dictionaries. For this project, you also need to know how to do the reverse, i.e., writing out to a csv file given a list of dictionaries. See the link below for a tutorial on how to do this:
-
-   # https://www.pythonforbeginners.com/basics/list-of-dictionaries-to-csv-in-python
-
+    for i in main_db.table_name():
+        table = main_db.search(i)
+        table.write_to_csv()
 
 # make calls to the initializing and login functions defined above
 
 initializing()
-print(main_db.search('Login'))
+print(main_db)
+print(main_db.search('login'))
 val = login()
 print(val)
 
