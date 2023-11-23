@@ -73,7 +73,7 @@
   - Evaluate
     - Unavailable if No Request
 
----
+------------------------------------------------------------------------------------------------------------------------
 ### Add Operation Class
 construct with UserID, Role, Database, Dictionary.
 - Remove Element(UserID,Table Name, Index of Element)
@@ -103,7 +103,7 @@ construct with UserID, Role, Database, Dictionary.
   - If Current Project Status be 'Incomplete'
     - Add new element to Pending_project_approval
     - with type 'Proposal'
----
+------------------------------------------------------------------------------------------------------------------------
 ### Add Function in project_manage.py
 - print_all(UserID)
   - Print Everything in database
@@ -116,6 +116,6 @@ construct with UserID, Role, Database, Dictionary.
   - print information for specific user from id
   - return length of list for further operation if needed
   - ###### example use case: Search for Invitation
----
+------------------------------------------------------------------------------------------------------------------------
 
 Add Validation Methods everywhere the program take input from user.

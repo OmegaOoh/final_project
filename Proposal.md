@@ -11,7 +11,7 @@ In order to completely approve projects
 7. Add in Presentation Appointment for Advisor
 8. Summarize the result
 
----
+------------------------------------------------------------------------------------------------------------------------
 
 #### Modify Pending_Project_Approval key to
   - Project ID
@@ -32,7 +32,7 @@ In order to completely approve projects
   - Project_Advisor
   - Response
   - Date_of_response
----
+------------------------------------------------------------------------------------------------------------------------
 ## Code Outline
 this code outline is under evaluate menu of faculties
 ### Advisor
@@ -58,7 +58,7 @@ this code outline is under evaluate menu of faculties
 - return approve or deny response
   - change their own response in dict of Pending_Project_Approval's review_result
 
-After all approval/denial response
+#### After all approval/denial response
 - Check If reviewers and advisor are all response
 - Check If Presentation Take Place
 - Check If They Pass Presentation

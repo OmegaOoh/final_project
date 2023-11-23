@@ -1,5 +1,3 @@
-# try wrapping the code below that reads a persons.csv file in a class and make it more general such that it can read in any csv file
-
 import csv, os
 
 __location__ = os.path.realpath(
@@ -13,6 +11,7 @@ def read_csv(file_name: str):
         for r in rows:
             ls.append(dict(r))
         return ls
+
 
 # Class implementation
 class Database:
