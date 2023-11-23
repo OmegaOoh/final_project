@@ -88,6 +88,9 @@ class Table:
             for i in self.__data:
                 writer.writerow(i.values())
 
+    def remove(self, x):
+        return self.__data.pop(x)
+
     def __str__(self):
         return f'{self.__table_name} : {self.__data}'
 
