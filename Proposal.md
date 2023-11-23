@@ -52,7 +52,7 @@ this code outline is under evaluate menu of faculties
 - Add menu to see review request
 - Accept/Deny review request
 
-### Reviewer (Not a New role)
+### Reviewer (New role)
 - Make Project Evaluate Option in menu available for them
 - read project report
 - return approve or deny response
