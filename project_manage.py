@@ -1,6 +1,6 @@
+import os
 # import database module
 import database
-import os
 
 main_db = database.Database()
 
@@ -19,25 +19,28 @@ def initializing():
         main_db.insert(table)
 
     if 'Project.csv' not in csv_ls:
-        table = database.Table("Project", {"ID": ''
-                                                            , 'Title': ''
-                                                            , 'Lead': ''
-                                                            , 'Member1': ''
-                                                            , 'Member2': ''
-                                                            , 'Advisor': ''
-                                                            , 'Status': ''})
+        table = database.Table("Project", {"ID": '',
+                                                            'Title': '',
+                                                            'Lead': '',
+                                                            'Member1': '',
+                                                            'Member2': '',
+                                                            'Advisor': '',
+                                                            'Status': ''
+                                                            })
         main_db.insert(table)
     if 'Advisor_pending_request.csv' not in csv_ls:
-        table = database.Table('Advisor_pending_request', {"ProjectID": ''
-                                                                            , "Name": ''
-                                                                            , "Response": ''
-                                                                            , "Response_date": ''})
+        table = database.Table('Advisor_pending_request', {"ProjectID": '',
+                                                                            "Name": '',
+                                                                            "Response": '',
+                                                                            "Response_date": ''
+                                                                            })
         main_db.insert(table)
     if 'Member_pending_request.csv' not in csv_ls:
-        table = database.Table('Member_pending_request', {"ProjectID": ''
-                                                                            , "Name": ''
-                                                                            , "Response": ''
-                                                                            , "Response_date": ''})
+        table = database.Table('Member_pending_request', {"ProjectID": '',
+                                                                            "Name": '',
+                                                                            "Response": '',
+                                                                            "Response_date": ''
+                                                                            })
         main_db.insert(table)
 
 
@@ -51,6 +54,7 @@ def login():
     pwd = input('Please enter your password: ')
     if user_dict['password'] == pwd:
         return user_dict['ID'], user_dict['role']
+    return None
 
 
 # define a function called exit

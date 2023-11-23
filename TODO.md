@@ -75,7 +75,7 @@
 
 ------------------------------------------------------------------------------------------------------------------------
 ### Add Operation Class
-construct with UserID, Role, Database, Dictionary.
+construct with UserID, Role, Database.
 - Remove Element(UserID,Table Name, Index of Element)
 - Create_Project(Project Title, UserID(Creator))
   - Checking Title Availability
