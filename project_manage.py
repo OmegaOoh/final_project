@@ -30,17 +30,25 @@ def initializing():
         main_db.insert(table)
     if 'Advisor_pending_request.csv' not in csv_ls:
         table = database.Table('Advisor_pending_request', {"ProjectID": '',
-                                                                             "Name": '',
+                                                                             "ReceiverID": '',
                                                                              "Response": '',
                                                                              "Response_date": ''
                                                                              })
         main_db.insert(table)
     if 'Member_pending_request.csv' not in csv_ls:
         table = database.Table('Member_pending_request', {"ProjectID": '',
-                                                                            "Name": '',
+                                                                            "ReceiverID": '',
                                                                             "Response": '',
                                                                             "Response_date": ''
                                                                             })
+        main_db.insert(table)
+
+    if 'Pending_project_approval' not in csv_ls:
+        table = database.Table("Pending_project_approval", {'ProjectID': '',
+                                                                              'Document': '',
+                                                                              'Advisor': '',
+                                                                              'Response': '',
+                                                                              'Response_date': ''})
         main_db.insert(table)
 
 

@@ -59,13 +59,13 @@ class Table:
         if isinstance(new_data, list):
             if self.__validate_new_data(new_data[0]):
                 for i in new_data:
-                    if list(self.__data[0].values()) == ['' for i in self.__data[0].keys()]:
+                    if list(self.__data[0].values()) == ['' for _ in self.__data[0].keys()]:
                         self.__data = []
                     if self.__validate_new_data(i):
                         self.__data.append(i)
         else:
             if self.__validate_new_data(new_data):
-                if list(self.__data[0].values()) == ['' for i in self.__data[0].keys()]:
+                if list(self.__data[0].values()) == ['' for _ in self.__data[0].keys()]:
                     self.__data = []
                 self.__data.append(new_data)
 

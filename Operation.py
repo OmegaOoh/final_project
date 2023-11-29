@@ -9,6 +9,7 @@ class Operation:
         curr_time = time.localtime()
         formatted_time = str(curr_time.tm_mon) + '/' + str(curr_time.tm_mday) + '/' + str(curr_time.tm_year)
         return formatted_time
+    
     @staticmethod
     def __is_int(x):
         try:
@@ -22,12 +23,45 @@ class Operation:
         p_table = db.search('persons')
         if p_table:
             p_table.search('ID', uid)
-
+            
     def __init__(self, uid, role, db: database.Database):
         self.__uid = uid
         self.role = role
         self.db = db
 
+    def __search_for_id(self, mode, query, role: list):
+        uid = None
+        p_table = self.db.search('persons')
+        if p_table:
+            # Search mode 'Name' / 'ID'
+            if mode == 'Name':
+                dict_p = p_table.search('first', query)
+                if dict_p:
+                    uid = dict_p['ID']
+                else:
+                    print('User not found')
+                    return None
+            elif mode == 'ID':
+                uid = query
+            # Check Role
+            dict_p = p_table.search['ID', uid]
+            if dict_p:
+                if dict_p['role'] in role:
+                    return uid
+                else:
+                    print('Invalid User Role')
+                    return None
+        else:
+            raise LookupError("Table not found")
+    
+    def __get_role(self, id):
+        table = self.db.search('persons')
+        if table:
+            elem = table.search('ID', id)
+            return elem['role']
+        else:
+            raise LookupError("Table not found")
+        
     @property
     def role(self):
         return self.__role
@@ -48,7 +82,7 @@ class Operation:
     # TODO Actually Generate ProjectID
     def create_project(self, project_title, uid):
         if self.__uid != uid:
-            return
+            raise PermissionError("User ID Not Match")
         else:
             table = self.db.search('Project')
             if table:
@@ -64,12 +98,14 @@ class Operation:
 
     def modify_project_detail(self, uid):
         if self.__uid != uid:
-            return
+            raise PermissionError("User ID Not Match")
         else:
             table = self.db.search('Project')
             if table:
                 project = table.search('lead', uid)
                 self.__project_modify_menu(project)
+            else:
+                raise LookupError("Table not found")
 
     def __project_modify_menu(self, project):
         while True:
@@ -104,34 +140,9 @@ class Operation:
                             break
                 break
 
-    def __search_for_id(self, mode, query, role: list):
-        uid = None
-        p_table = self.db.search('persons')
-        if p_table:
-            # Search mode 'Name' / 'ID'
-            if mode == 'Name':
-                dict_p = p_table.search('first', query)
-                if dict_p:
-                    uid = dict_p['ID']
-                else:
-                    print('User not found')
-                    return None
-            elif mode == 'ID':
-                uid = query
-            # Check Role
-            dict_p = p_table.search['ID', uid]
-            if dict_p:
-                if dict_p['role'] in role:
-                    return uid
-                else:
-                    print('Invalid User Role')
-                    return None
-        else:
-            return None
-
     def send_invites(self, l_uid, search_mode, query):
         if l_uid != self.__uid:
-            return
+            raise PermissionError("User ID Not Match")
         uid = self.__search_for_id(search_mode, query, ['student', 'member', 'lead'])
         if uid:
             i_table = self.db.search('Member_pending_request')
@@ -139,13 +150,15 @@ class Operation:
             if i_table and pr_table:
                 # Find Project ID and Project Lead by UID
                 project_id = pr_table.search('lead', l_uid)['ProjectID']
-                i_table.insert(project_id, uid, 'pending', '')
+                i_table.insert(project_id, uid, 'Pending', 'Pending')
+            else:
+                raise LookupError("Table not found")
         else:
             print('No Receiver uid found')
 
     def request_advisor(self, l_uid, search_mode, query):
         if l_uid != self.__uid:
-            return
+            raise PermissionError("User ID Not Match")
         uid = self.__search_for_id(search_mode, query, ['faculty', 'advisor'])
         if uid:
             i_table = self.db.search('Advisor_pending_request')
@@ -153,17 +166,47 @@ class Operation:
             if i_table and pr_table:
                 # Find Project ID and Project Lead by UID
                 project_id = pr_table.search('lead', l_uid)['ProjectID']
-                i_table.insert(project_id, uid, 'pending', '')
+                i_table.insert(project_id, uid, 'Pending', 'Pending')
+            else:
+                LookupError("Table not found")
         else:
             print('No Receiver uid found')
 
     def accept_deny_request(self, request, response: bool):
-        if not (request['response'] and request['Response_date']):
-            print('Request Invalid')
+        if not (request['response'] in ['Accepted', 'Denied'] and request['Response_date'] == ''):
+            print('Request Already Response')
             return
         if response:
-            request['response'] = 'Accepted'
+            request['Response'] = 'Accepted'
         else:
-            request['response'] = 'Denied'
+            request['Response'] = 'Denied'
         request['Response_date'] = self.time_format()
+        
+    def submit(self, uid, pid, doc):
+        if uid != self.__uid:
+            raise PermissionError("User ID Not Match")
+        pr_table = self.db.search('Project')
+        if not pr_table:
+            raise LookupError("Table not found")
+        proj_detail = pr_table.search('ID', pid)
+        if not proj_detail:
+            raise LookupError['Project Not Found']
+        if proj_detail['lead'] != uid:
+            raise PermissionError("User does not Have Permission")
+
+        table = self.db.search('Pending_project_approval')
+        if not table:
+            raise LookupError("Table not found")
+
+        request = {'ProjectID': pid,
+                   'Document': doc,
+                   'Advisor': proj_detail['Advisor'],
+                   'Response': 'Pending',
+                   'Response_date': 'Pending'
+                   }
+        table.insert(request)
+
+            
+            
+            
 
