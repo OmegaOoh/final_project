@@ -29,6 +29,18 @@ class Operation:
         self.role = role
         self.db = db
 
+    ###################################################################################################################
+    # Admin Only
+
+    def read_all_db(self, uid, role):
+        if uid != self.__uid or role != 'admin' or role != self.role:
+            raise PermissionError()
+        for i in self.db.table_name():
+            print(self.db.search(i).to_table())
+            print()
+
+    ###################################################################################################################
+
     def __search_for_id(self, mode, query, role: list):
         uid = None
         p_table = self.db.search('persons')
@@ -79,7 +91,6 @@ class Operation:
         else:
             table.data.remove(index)
 
-    # TODO Actually Generate ProjectID
     def create_project(self, project_title, uid):
         if self.__uid != uid:
             raise PermissionError("User ID Not Match")
@@ -92,9 +103,11 @@ class Operation:
 
     @staticmethod
     def __gen_project_id(project_title):
-        proj_id = len(project_title)
-        proj_id += str(time.time())[-6:-4]
-        return proj_id
+        uniqueid = str(time.gmtime().tm_year)[-2:]
+        uniqueid += str(time.time_ns())[-8:-3]
+        uniqueid += str(len(i) % 10)
+        uniqueid += str(sum([int(i) for i in uniqueid]) % 100)
+        return uniqueid
 
     def modify_project_detail(self, uid):
         if self.__uid != uid:
@@ -205,8 +218,5 @@ class Operation:
                    'Response_date': 'Pending'
                    }
         table.insert(request)
-
-            
-            
             
 

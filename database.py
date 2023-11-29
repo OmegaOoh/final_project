@@ -88,15 +88,59 @@ class Table:
             for i in self.__data:
                 writer.writerow(i.values())
 
+    def select(self, key):
+        return [i[key] for i in self.data]
     def remove(self, x):
         return self.__data.pop(x)
 
     def __str__(self):
         return f'{self.__table_name} : {self.__data}'
 
+    def to_table(self):
+        # Get Longest Element of each rows
+        spaces_key = {}
+        for j in self.key:
+            ls = self.select(j)
+            ls = [len(k) + 15 for k in ls]
+            spaces_key[j] = max(ls)
+
+
+        # Key
+        key_temp = '     |'
+        for i in self.key:
+            key_temp += f" {i: ^{spaces_key[i]}} |"
+        table_name = 'Table Name : ' + self.table_name
+        o_put = f"{table_name : ^{(3* len(spaces_key)) + sum([i for i in spaces_key.values()])}}\n"
+        o_put += key_temp + '\n'
+        # Divider
+        o_put += '-----|'
+        for i in spaces_key.values():
+            o_put += "-" * (i + 2) + "|"
+        o_put += '\n'
+
+        # Element
+        for i in range(len(self.__data)):
+            temp = f'{i+1: ^4} |'
+            for j in self.key:
+                temp += f" {self.__data[i][j]: ^{spaces_key[j]}} |"
+            o_put += temp + '\n'
+
+        # Divider
+        o_put += '-----|'
+        for i in spaces_key.values():
+            o_put += "-" * (i + 2) + "|"
+        return o_put
+
+
+
+
+
+
+
+
 
 # # Test code
-# test_table = Table('person', persons)
+# test_table = Table('person', read_csv('persons.csv'))
 # test_table2 = Table('test', [{"1": 1, "2": 2, "3": 3}])
 # my_db = Database()
 # my_db.insert(test_table)
@@ -106,6 +150,8 @@ class Table:
 # my_db.search('test').insert(test_insert)
 # my_db.search('test').insert(test_insert2)
 # print(my_db)
+# ps = my_db.search('person')
+# print(ps.to_table())
 # test_table2.write_to_csv()
 
 

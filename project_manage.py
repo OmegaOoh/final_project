@@ -1,6 +1,6 @@
 import os
-# import database module
 import database
+from operation import Operation
 
 main_db = database.Database()
 
@@ -40,7 +40,8 @@ def initializing():
                                                                             "ReceiverID": '',
                                                                             "Response": '',
                                                                             "Response_date": ''
-                                                                            })
+                                                                           })
+
         main_db.insert(table)
 
     if 'Pending_project_approval' not in csv_ls:
@@ -61,9 +62,8 @@ def login():
         return None
     pwd = input('Please enter your password: ')
     if user_dict['password'] == pwd:
-        return user_dict['ID'], user_dict['role']
+        return [user_dict['ID'], user_dict['role']]
     return None
-
 
 # define a function called exit
 def exit():
@@ -80,19 +80,30 @@ val = login()
 print(val)
 
 # based on the return value for login, activate the code that performs activities according to the role defined for that person_id
-
-# if val[1] = 'admin':
+if not val:
+    raise LookupError()
+if val[1] == 'admin':
     # see and do admin related activities
-# elif val[1] = 'student':
+    ops = Operation(val[0], val[1], main_db)
+    function_dict = {'Read Data': ops.read_all_db(val[0], val[1])}
+    ops.read_all_db(val[0], val[1])
+
+elif val[1] == 'student':
     # see and do student related activities
-# elif val[1] = 'member':
+    pass
+elif val[1] == 'member':
     # see and do member related activities
-# elif val[1] = 'lead':
+    pass
+elif val[1] == 'lead':
     # see and do lead related activities
-# elif val[1] = 'faculty':
+    pass
+elif val[1] == 'faculty':
     # see and do faculty related activities
-# elif val[1] = 'advisor':
+    pass
+elif val[1] == 'advisor':
     # see and do advisor related activities
+    pass
+
 
 # once everyhthing is done, make a call to the exit function
 exit()
