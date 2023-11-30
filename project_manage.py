@@ -50,17 +50,28 @@ def initializing():
                                                                               'Response_date': ''})
         main_db.insert(table)
 
+
 def login():
-    user = input('Please enter your username: ')
     table = main_db.search('login')
-    user_dict = table.search('username', user)
-    if user_dict is None:
-        print('user not found')
-        return None
-    pwd = input('Please enter your password: ')
-    if user_dict['password'] == pwd:
-        return [user_dict['ID'], user_dict['role']]
-    return None
+    while True:
+        user = input('Please enter your username: ')
+        user_dict = table.search('username', user)
+        if user_dict is None:
+            print('user not found')
+            continue
+        break
+
+    i = 0
+    while i < 5:
+
+        pwd = input('Please enter your password: ')
+        if user_dict['password'] == pwd:
+            return [user_dict['ID'], user_dict['role']]
+        else:
+            print('Access Denied')
+            print()
+            i += 1
+    raise PermissionError("Maximum Tried Reached")
 
 
 ########################################################################################################################
@@ -88,10 +99,11 @@ def update_function(params):
     elif params[1] == 'lead':
         # see and do lead related activities
         return {'Show Project Detail': [ops.show_user_project, [params[0]]],
-                'Find Member': [ops.read_filtered_person, [params[0], 'type', 'student']],
                 'Modify Project Detail': [ops.modify_project_detail, [params[0]]],
-                'Find Advisor': [ops.read_filtered_person, [params[0], 'type', 'faculty']],
+                'Find Member': [ops.read_filtered_person, [params[0], 'type', 'student']],
                 'Sends Invites': [ops.send_invites, [params[0]]],
+                'Find Advisor': [ops.read_filtered_person, [params[0], 'type', 'faculty']],
+                'Request Advisor': [ops.request_advisor, [params[0]]],
                 'Show Invitation': [ops.response_request_menu, [params[0],
                                     main_db.search('Member_pending_request')]],
                 'Submit': [ops.submit, [params[0]]],
@@ -112,14 +124,17 @@ def update_function(params):
 
 def menu():
     while True:
+        print()
         table = main_db.search('login')
         r = table.search('ID', userid)
         func_dict = update_function([userid, r['role']])
+        print(f"Login as {userid}. Role: {r['role']}")
         select_dict = {}
         for i in range((len(list(func_dict.keys())))):
             print(f'{i+1}. {list(func_dict.keys())[i]}')
             select_dict[str(i+1)] = list(func_dict.keys())[i]
         while True:
+
             c = input('Enter Choice: ')
             if c in select_dict:
                 func_key = select_dict[c]

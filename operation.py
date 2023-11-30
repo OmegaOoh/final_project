@@ -46,6 +46,44 @@ class Operation:
                 user_dict['role'] = new_role
                 self.role = new_role
 
+    def __update_project(self):
+        pr_table = self.db.search('Project')
+        if not pr_table:
+            raise LookupError("Project Table not Found")
+        adv_req = self.db.search('Advisor_pending_request')
+        if not adv_req:
+            raise LookupError("Advisor Request Table not Found")
+        mem_req = self.db.search('Member_pending_request')
+        if not mem_req:
+            raise LookupError("Member Invites Table not Found")
+
+        adv_acc_req = adv_req.filter(lambda x: x['Response'] == 'Accept')
+        for i in adv_acc_req:
+            pr_id = i['ProjectID']
+            if pr_table.search('ProjectID',pr_id)['Advisor'] == '':
+                pr_table.search('ProjectID', pr_id)['Advisor'] = i['ReceiverID']
+            adv_pending_req = adv_req.filter(lambda x: x['ProjectID'] == pr_id)
+            for j in adv_pending_req:
+                j['Response'] = 'Expired'
+                j['Response_date'] = self.time_format()
+
+        mem_acc_req = mem_req.filter(lambda x: x['Response'] == 'Accept')
+        for i in mem_acc_req:
+            pr_id = i['ProjectID']
+            if pr_table.search('ProjectID', pr_id)['Member1'] == '':
+                pr_table.search('ProjectID', pr_id)['Member1'] = i['ReceiverID']
+            elif pr_table.search('ProjectID', pr_id)['Member2'] == '':
+                pr_table.search('ProjectID', pr_id)['Member2'] = i['ReceiverID']
+            mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id)
+            if (pr_table.search('ProjectID', pr_id)['Member1'] != '' and
+                pr_table.search('ProjectID', pr_id)['Member2'] != ''):
+                for j in mem_pending_req:
+                    j['Response'] = 'Expired'
+                    j['Response_date'] = self.time_format()
+
+
+
+
     ###################################################################################################################
     # Admin Related Staff
 
@@ -135,28 +173,21 @@ class Operation:
         else:
             raise LookupError('Table not found')
 
-    def __search_for_id(self, mode, query, role: list):
+    def __search_for_id(self, mode, query, type: str):
         uid = None
         p_table = self.db.search('persons')
+        p_table = p_table.filter(lambda x: x['type'] == type)
         if p_table:
             # Search mode 'Name' / 'ID'
             if mode == 'Name':
                 dict_p = p_table.search('first', query)
                 if dict_p:
-                    uid = dict_p['ID']
+                    return dict_p['ID']
                 else:
                     print('User not found')
                     return None
             elif mode == 'ID':
-                uid = query
-            # Check Role
-            dict_p = p_table.search['ID', uid]
-            if dict_p:
-                if dict_p['role'] in role:
-                    return uid
-                else:
-                    print('Invalid User Role')
-                    return None
+                return query
         else:
             raise LookupError("Table not found")
     
@@ -174,7 +205,7 @@ class Operation:
 
     @role.setter
     def role(self, r):
-        if r in ['student', 'member', 'lead', 'faculty', 'advisor','admin']:
+        if r in ['student', 'member', 'lead', 'faculty', 'advisor', 'admin']:
             self.__role = r
         else:
             ValueError('INVALID ROLE')
@@ -222,7 +253,7 @@ class Operation:
         else:
             table = self.db.search('Project')
             if table:
-                project = table.search('lead', uid)
+                project = table.search('Lead', uid)
                 self.__project_modify_menu(project)
             else:
                 raise LookupError("Table not found")
@@ -275,14 +306,20 @@ class Operation:
             raise PermissionError("User ID Not Match")
         s_m = input('Search by Name or by ID \nSearch Mode: ')
         s_q = input('Search Query: ')
-        uid = self.__search_for_id(s_m, s_q, ['student', 'member', 'lead'])
+        uid = self.__search_for_id(s_m, s_q, 'student')
+        if uid == l_uid:
+            print("You Can't Invite Your Self")
+            return
         if uid:
             i_table = self.db.search('Member_pending_request')
             pr_table = self.db.search('Project')
             if i_table and pr_table:
                 # Find Project ID and Project Lead by UID
-                project_id = pr_table.search('lead', l_uid)['ProjectID']
-                i_table.insert(project_id, uid, 'Pending', 'Pending')
+                project_id = pr_table.search('Lead', l_uid)['ProjectID']
+                i_table.insert({"ProjectID": project_id,
+                                "ReceiverID": uid,
+                                "Response": 'Pending',
+                                "Response_date": ''})
             else:
                 raise LookupError("Table not found")
         else:
@@ -293,14 +330,20 @@ class Operation:
             raise PermissionError("User ID Not Match")
         s_m = input('Search by Name or by ID \nSearch Mode: ')
         s_q = input('Search Query: ')
-        uid = self.__search_for_id(s_m, s_q, ['faculty', 'advisor'])
+        uid = self.__search_for_id(s_m, s_q, 'faculty')
+        if uid == l_uid:
+            print("You Can't Invite Your Self")
+            return
         if uid:
             i_table = self.db.search('Advisor_pending_request')
             pr_table = self.db.search('Project')
             if i_table and pr_table:
                 # Find Project ID and Project Lead by UID
-                project_id = pr_table.search('lead', l_uid)['ProjectID']
-                i_table.insert(project_id, uid, 'Pending', 'Pending')
+                project_id = pr_table.search('Lead', l_uid)['ProjectID']
+                i_table.insert({"ProjectID": project_id,
+                                "ReceiverID": uid,
+                                "Response": 'Pending',
+                                "Response_date": ''})
             else:
                 LookupError("Table found")
         else:
@@ -316,28 +359,37 @@ class Operation:
         else:
             request['Response'] = 'Denied'
         request['Response_date'] = self.time_format()
+        self.__update_project()
 
     def response_request_menu(self, uid, table):
         if uid != self.__uid:
             raise PermissionError()
         if not isinstance(table, Table):
             raise TypeError()
+        pr_table = self.db.search('Project')
+        if not pr_table:
+            raise LookupError("Project Table not Found")
         # Print all user's request
         req_dict = {}
-        request_data = []
         to_be = 'member'
         if self.role in ['faculty', 'advisor']:
             to_be = 'advisor'
-        for i in range(len(table.data)):
-            request_data = table.data[i]
-            if request_data['ReceiverID']:
-                project_id = request_data['ProjectID']
-                print(f'{i+1}. Project: {project_id}')
-                req_dict[str(i+1)] = request_data['ProjectID']
+        print("Request: ")
+        request_data = table.filter(lambda x: x['ReceiverID'] == uid)
+
+        for i in range(len(request_data.data)):
+            project_detail = pr_table.search('ProjectID', request_data.data[i]['ProjectID'])
+            print(f'{i+1}. Project: {project_detail["ProjectID"]} {project_detail["Title"]}')
+            req_dict[i+1] = request_data.data[i]
+
+        if req_dict == {}:
+            print('Empty Inbox')
+            print()
+            return
+
         while True:
             print("1. Response \n2. Return")
             c = input('Choice: ')
-            r = False
             if c in ['1', '2']:
                 if c == '1':
                     while True:

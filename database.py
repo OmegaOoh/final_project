@@ -64,8 +64,8 @@ class Table:
 
     def insert(self, x):
         if self.__validate_new_data(x):
-            if self.data[0].values() is ['' for _ in self.key]:
-                self.data.pop(0)
+            if all(i == '' for i in self.__data[0].values()):
+                self.data.clear()
             self.data.append(x)
             return True
         else:
@@ -92,7 +92,7 @@ class Table:
         for item1 in self.data:
             if condition(item1):
                 data.append(item1)
-        if data == []:
+        if data is []:
             return Table(self.table_name + '_filtered', [{i: '' for i in self.key}])
         return Table(self.table_name + '_filtered', data)
 
