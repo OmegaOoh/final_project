@@ -45,8 +45,7 @@ class Table:
             self.__data = [data]
         elif isinstance(data, list):
             self.__data = data
-            if len(self.__data) != 0:
-                self.key = self.__data[0].keys()
+            self.key = [i for i in self.__data[0].keys()]
 
     @property
     def table_name(self):
@@ -92,8 +91,8 @@ class Table:
         for item1 in self.data:
             if condition(item1):
                 data.append(item1)
-        if data is []:
-            return Table(self.table_name + '_filtered', [{i: '' for i in self.key}])
+        if not data:
+            data = [{i: '' for i in self.__data[0].keys()}]
         return Table(self.table_name + '_filtered', data)
 
     def remove_data(self, x):

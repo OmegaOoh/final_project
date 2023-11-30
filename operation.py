@@ -57,29 +57,35 @@ class Operation:
         if not mem_req:
             raise LookupError("Member Invites Table not Found")
 
-        adv_acc_req = adv_req.filter(lambda x: x['Response'] == 'Accept')
-        for i in adv_acc_req:
-            pr_id = i['ProjectID']
-            if pr_table.search('ProjectID',pr_id)['Advisor'] == '':
-                pr_table.search('ProjectID', pr_id)['Advisor'] = i['ReceiverID']
-            adv_pending_req = adv_req.filter(lambda x: x['ProjectID'] == pr_id)
-            for j in adv_pending_req:
-                j['Response'] = 'Expired'
-                j['Response_date'] = self.time_format()
+        adv_acc_req = adv_req.filter(lambda x: x['Response'] == 'Accepted')
+        if adv_acc_req:
+            for i in adv_acc_req.data:
+                pr_id = i['ProjectID']
+                project = pr_table.search('ProjectID', pr_id)
+                if project and project['Advisor'] == '':
+                    pr_table.search('ProjectID', pr_id)['Advisor'] = i['ReceiverID']
+                adv_pending_req = adv_req.filter(lambda x: x['ProjectID'] == pr_id)
+                if adv_pending_req:
+                    for j in adv_pending_req.data:
+                        j['Response'] = 'Expired'
+                        j['Response_date'] = self.time_format()
 
-        mem_acc_req = mem_req.filter(lambda x: x['Response'] == 'Accept')
-        for i in mem_acc_req:
-            pr_id = i['ProjectID']
-            if pr_table.search('ProjectID', pr_id)['Member1'] == '':
-                pr_table.search('ProjectID', pr_id)['Member1'] = i['ReceiverID']
-            elif pr_table.search('ProjectID', pr_id)['Member2'] == '':
-                pr_table.search('ProjectID', pr_id)['Member2'] = i['ReceiverID']
-            mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id)
-            if (pr_table.search('ProjectID', pr_id)['Member1'] != '' and
-                pr_table.search('ProjectID', pr_id)['Member2'] != ''):
-                for j in mem_pending_req:
-                    j['Response'] = 'Expired'
-                    j['Response_date'] = self.time_format()
+        mem_acc_req = mem_req.filter(lambda x: x['Response'] == 'Accepted')
+
+        if mem_acc_req:
+            for i in mem_acc_req.data:
+                pr_id = i['ProjectID']
+                project = pr_table.search('ProjectID', pr_id)
+                if project and project['Member1'] == '':
+                    pr_table.search('ProjectID', pr_id)['Member1'] = i['ReceiverID']
+                elif project and pr_table.search('ProjectID', pr_id)['Member2'] == '':
+                    pr_table.search('ProjectID', pr_id)['Member2'] = i['ReceiverID']
+                mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id)
+                if mem_pending_req:
+                    if project['Member1'] != '' and project['Member2'] != '':
+                        for j in mem_pending_req.data:
+                            j['Response'] = 'Expired'
+                            j['Response_date'] = self.time_format()
 
 
 
@@ -187,7 +193,11 @@ class Operation:
                     print('User not found')
                     return None
             elif mode == 'ID':
-                return query
+                dict_p = p_table.search('ID', query)
+                if dict_p:
+                    return query
+                else:
+                    print('User not found')
         else:
             raise LookupError("Table not found")
     
@@ -269,7 +279,7 @@ class Operation:
                 continue
             c = int(c)
             if c == 1:
-                print('Current Title',project['Title'])
+                print('Current Title', project['Title'])
                 project['Title'] = input('New Title: ')
                 break
             if c == 2 and project['Member1'] != '' or project['Member2'] != '':
@@ -296,7 +306,7 @@ class Operation:
             raise PermissionError()
         project = self.db.search('Project')
         if project:
-            filtered = project.filter(lambda x: x['Lead'] == uid or x['Member1'] == uid or x['Member2'] == uid)
+            filtered = project.filter(lambda x: uid in [x['Lead'], x['Member1'], x['Member2']])
             print(filtered.to_table())
         else:
             raise LookupError('Table not found')
@@ -305,6 +315,10 @@ class Operation:
         if l_uid != self.__uid:
             raise PermissionError("User ID Not Match")
         s_m = input('Search by Name or by ID \nSearch Mode: ')
+        while s_m not in ['ID', 'Name']:
+            print('Invalid Search Mode')
+            s_m = input('Search by Name or by ID \nSearch Mode: ')
+
         s_q = input('Search Query: ')
         uid = self.__search_for_id(s_m, s_q, 'student')
         if uid == l_uid:
@@ -350,7 +364,7 @@ class Operation:
             print('No Receiver uid found')
 
     def __accept_deny_request(self, request, response: bool, uid, to_be):
-        if not (request['response'] in ['Accepted', 'Denied'] and request['Response_date'] == ''):
+        if request['Response'] != 'Pending' and request['Response_date'] != '':
             print('Request Already Response')
             return
         if response:
@@ -376,11 +390,12 @@ class Operation:
             to_be = 'advisor'
         print("Request: ")
         request_data = table.filter(lambda x: x['ReceiverID'] == uid)
+        request_data = request_data.filter(lambda x: x['Response'] == 'Pending')
 
         for i in range(len(request_data.data)):
             project_detail = pr_table.search('ProjectID', request_data.data[i]['ProjectID'])
             print(f'{i+1}. Project: {project_detail["ProjectID"]} {project_detail["Title"]}')
-            req_dict[i+1] = request_data.data[i]
+            req_dict[str(i+1)] = request_data.data[i]
 
         if req_dict == {}:
             print('Empty Inbox')
@@ -388,6 +403,7 @@ class Operation:
             return
 
         while True:
+            print('Choice')
             print("1. Response \n2. Return")
             c = input('Choice: ')
             if c in ['1', '2']:
@@ -398,7 +414,7 @@ class Operation:
                             print('1 to Accept 2 to Deny')
                             r = input('Your Response: ')
                             _map = {'1': True, '2': False}
-                            self.__accept_deny_request(request_data, _map[r], uid, to_be)
+                            self.__accept_deny_request(req_dict[inv], _map[r], uid, to_be)
                             break
                 if c == '2':
                     return
