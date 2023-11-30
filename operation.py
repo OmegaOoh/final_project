@@ -198,8 +198,14 @@ class Operation:
                     return
                 project_id = self.__gen_project_id(project_title)
                 if project_id:
-                    table.insert(project_id, project_id, uid, '', '', '', 'New')
-                    self.__update_role(uid, 'lead')
+                    if table.insert({"ProjectID": str(project_id),
+                                     'Title': project_title,
+                                     'Lead': uid,
+                                     'Member1': '',
+                                     'Member2': '',
+                                     'Advisor': '',
+                                     'Status': 'New'}):
+                        self.__update_role(uid, 'lead')
 
     # ProjectID generation is Subject to be change
     @staticmethod
@@ -259,7 +265,7 @@ class Operation:
             raise PermissionError()
         project = self.db.search('Project')
         if project:
-            filtered = project.filter(lambda x: x['lead'] == uid or x['member1'] == uid or x['member2'] == uid)
+            filtered = project.filter(lambda x: x['Lead'] == uid or x['Member1'] == uid or x['Member2'] == uid)
             print(filtered.to_table())
         else:
             raise LookupError('Table not found')
@@ -312,8 +318,10 @@ class Operation:
         request['Response_date'] = self.time_format()
 
     def response_request_menu(self, uid, table):
-        if uid != self.__uid or not isinstance(table, Table):
+        if uid != self.__uid:
             raise PermissionError()
+        if not isinstance(table, Table):
+            raise TypeError()
         # Print all user's request
         req_dict = {}
         request_data = []
@@ -327,7 +335,7 @@ class Operation:
                 print(f'{i+1}. Project: {project_id}')
                 req_dict[str(i+1)] = request_data['ProjectID']
         while True:
-            print("1. Response \n 2. Return")
+            print("1. Response \n2. Return")
             c = input('Choice: ')
             r = False
             if c in ['1', '2']:

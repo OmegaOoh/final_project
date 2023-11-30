@@ -1,5 +1,6 @@
 import os
 import database
+import operation
 from operation import Operation
 
 main_db = database.Database()
@@ -19,28 +20,25 @@ def initializing():
         main_db.insert(table)
 
     if 'Project.csv' not in csv_ls:
-        table = database.Table("Project", {"ID": '',
+        table = database.Table("Project", {"ProjectID": '',
                                                              'Title': '',
                                                              'Lead': '',
                                                              'Member1': '',
                                                              'Member2': '',
                                                              'Advisor': '',
-                                                             'Status': ''
-                                                             })
+                                                             'Status': ''})
         main_db.insert(table)
     if 'Advisor_pending_request.csv' not in csv_ls:
         table = database.Table('Advisor_pending_request', {"ProjectID": '',
                                                                              "ReceiverID": '',
                                                                              "Response": '',
-                                                                             "Response_date": ''
-                                                                             })
+                                                                             "Response_date": ''})
         main_db.insert(table)
     if 'Member_pending_request.csv' not in csv_ls:
         table = database.Table('Member_pending_request', {"ProjectID": '',
                                                                             "ReceiverID": '',
                                                                             "Response": '',
-                                                                            "Response_date": ''
-                                                                           })
+                                                                            "Response_date": ''})
 
         main_db.insert(table)
 
@@ -51,7 +49,6 @@ def initializing():
                                                                               'Response': '',
                                                                               'Response_date': ''})
         main_db.insert(table)
-
 
 def login():
     user = input('Please enter your username: ')
@@ -68,8 +65,56 @@ def login():
 
 ########################################################################################################################
 # Operation
-def menu(func_dict):
+def update_function(params):
+    if params[1] == 'admin':
+        # see and do admin related activities
+        return {'Read Data': [ops.read_all_db, [params[0]]],
+                'Modify Data': [ops.modify, [params[0]]],
+                'Remove Data': [ops.remove_data, [params[0]]],
+                'Exit': [exit, [None]]}
+
+    elif params[1] == 'student':
+        # see and do student related activities
+        return {'Create Project': [ops.create_project, [params[0]]],
+                'Show Invitation': [ops.response_request_menu, [params[0],
+                                    main_db.search('Member_pending_request')]],
+                'Exit': [exit, [None]]}
+    elif params[1] == 'member':
+        # see and do member related activities
+        return {'See Project Detail': [ops.show_user_project, [params[0]]],
+                'Show Invitation': [ops.response_request_menu, [params[0],
+                                    main_db.search('Member_pending_request')]],
+                'Exit': [exit, [None]]}
+    elif params[1] == 'lead':
+        # see and do lead related activities
+        return {'Show Project Detail': [ops.show_user_project, [params[0]]],
+                'Find Member': [ops.read_filtered_person, [params[0], 'type', 'student']],
+                'Modify Project Detail': [ops.modify_project_detail, [params[0]]],
+                'Find Advisor': [ops.read_filtered_person, [params[0], 'type', 'faculty']],
+                'Sends Invites': [ops.send_invites, [params[0]]],
+                'Show Invitation': [ops.response_request_menu, [params[0],
+                                    main_db.search('Member_pending_request')]],
+                'Submit': [ops.submit, [params[0]]],
+                'Exit': [exit, [None]]}
+    elif params[1] == 'faculty':
+        # see and do faculty related activities
+        return {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
+                'Show Request': [ops.response_request_menu, [params[0],
+                                 main_db.search('Advisor_pending_request')]],
+                'Exit': [exit, [None]]}
+    elif params[1] == 'advisor':
+        # see and do advisor related activities
+        return {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
+                'Show Request': [ops.response_request_menu, [params[0],
+                                 main_db.search('Advisor_pending_request')]],
+                'Exit': [exit, [None]]}
+
+
+def menu():
     while True:
+        table = main_db.search('login')
+        r = table.search('ID', userid)
+        func_dict = update_function([userid, r['role']])
         select_dict = {}
         for i in range((len(list(func_dict.keys())))):
             print(f'{i+1}. {list(func_dict.keys())[i]}')
@@ -79,10 +124,12 @@ def menu(func_dict):
             if c in select_dict:
                 func_key = select_dict[c]
                 func = func_dict[func_key][0]
+                if func == exit:
+                    return
                 params = func_dict[func_key][1]
                 func(*params)
                 break
-                print('Invalid Input')
+            print('Invalid Input')
 
 
 ########################################################################################################################
@@ -94,56 +141,17 @@ def exit():
 
 # make calls to the initializing and login functions defined above
 initializing()
-print(main_db)
 print(main_db.search('login'))
 val = login()
-print(val)
+
+userid = val[0]
 
 ops = Operation(val[0], main_db)
 if not val:
     raise LookupError()
 
-function_dict = {}
-if val[1] == 'admin':
-    # see and do admin related activities
-    function_dict = {'Read Data': [ops.read_all_db, [val[0]]],
-                     'Modify Data': [ops.modify, [val[0]]],
-                     'Remove Data': [ops.remove_data, [val[0]]],
-                     'Exit': [exit, [None]]}
 
-elif val[1] == 'student':
-    # see and do student related activities
-    function_dict = {'Create Project': [ops.create_project, [val[0]]],
-                     'Invitation': [ops.response_request_menu,[val[0], 'Member_pending_request']],
-                     'Exit': [exit, None]}
-elif val[1] == 'member':
-    # see and do member related activities
-    function_dict = {'See Project Detail': [ops.show_user_project, [val[0]]],
-                     'Show Invitation': [ops.response_request_menu, [val[0], 'Member_pending_request']],
-                     'Exit': [exit, [None]]}
-elif val[1] == 'lead':
-    # see and do lead related activities
-    function_dict = {'Show Project Detail': [ops.show_user_project, [val[0]]],
-                     'Find Member': [ops.read_filtered_person, [val[0], 'type', 'student']],
-                     'Modify Project Detail': [ops.modify_project_detail, [val[0]]],
-                     'Find Advisor': [ops.read_filtered_person, [val[0], 'type', 'faculty']],
-                     'Sends Invites': [ops.send_invites, [val[0]]],
-                     'Submit': [ops.submit, [val[0]]],
-                     'Exit': [exit, [None]]
-                     }
-elif val[1] == 'faculty':
-    # see and do faculty related activities
-    function_dict = {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
-                     'Show Request': [ops.response_request_menu, [val[0], 'Advisor_pending_request']],
-                     'Exit': [exit, [None]]}
-elif val[1] == 'advisor':
-    # see and do advisor related activities
-    function_dict = {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
-                     'Response To Request': [ops.response_request_menu, [val[0], 'Advisor_pending_request']],
-                     'Exit': [exit, [None]]}
-
-# Call Open Menu
-if function_dict != {}:
-    menu(function_dict)
+# Open Menu
+menu()
 # once everything is done, make a call to the exit function
 exit()

@@ -45,7 +45,8 @@ class Table:
             self.__data = [data]
         elif isinstance(data, list):
             self.__data = data
-            self.key = self.__data[0].keys()
+            if len(self.__data) != 0:
+                self.key = self.__data[0].keys()
 
     @property
     def table_name(self):
@@ -56,7 +57,16 @@ class Table:
         return self.__data
 
     def __validate_new_data(self, x):
-        if x.keys() == self.key:
+        if [i for i in x.keys()] == self.key:
+            return True
+        else:
+            return False
+
+    def insert(self, x):
+        if self.__validate_new_data(x):
+            if self.data[0].values() is ['' for _ in self.key]:
+                self.data.pop(0)
+            self.data.append(x)
             return True
         else:
             return False
@@ -77,17 +87,17 @@ class Table:
     def select(self, key):
         return [i[key] for i in self.data]
 
-    def __filter(self, condition):
-        filtered_table = Table(self.table_name + '_filtered', [])
+    def filter(self, condition):
+        data = []
         for item1 in self.data:
             if condition(item1):
-                filtered_table.data.append(item1)
-        return filtered_table
+                data.append(item1)
+        if data == []:
+            return Table(self.table_name + '_filtered', [{i: '' for i in self.key}])
+        return Table(self.table_name + '_filtered', data)
 
     def remove_data(self, x):
         return self.__data.pop(x)
-
-
 
     def __str__(self):
         return f'{self.__table_name} : {self.__data}'
