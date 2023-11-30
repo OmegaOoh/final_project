@@ -65,28 +65,52 @@ def login():
         return [user_dict['ID'], user_dict['role']]
     return None
 
-# define a function called exit
+
+########################################################################################################################
+# Operation
+def menu(func_dict):
+    while True:
+        select_dict = {}
+        for i in range((len(list(func_dict.keys())))):
+            print(f'{i+1}. {list(func_dict.keys())[i]}')
+            select_dict[str(i+1)] = list(func_dict.keys())[i]
+        while True:
+            c = input('Enter Choice: ')
+            if c in select_dict:
+                func_key = select_dict[c]
+                func = func_dict[func_key][0]
+                params = func_dict[func_key][1]
+                func(params)
+                break
+
+# Match Function name to its parameter
+
+########################################################################################################################
+
 def exit():
     for i in main_db.table_name():
         table = main_db.search(i)
         table.write_to_csv()
 
-# make calls to the initializing and login functions defined above
 
+# make calls to the initializing and login functions defined above
 initializing()
 print(main_db)
 print(main_db.search('login'))
 val = login()
 print(val)
 
-# based on the return value for login, activate the code that performs activities according to the role defined for that person_id
 if not val:
     raise LookupError()
+
+function_dict = {}
 if val[1] == 'admin':
     # see and do admin related activities
-    ops = Operation(val[0], val[1], main_db)
-    function_dict = {'Read Data': ops.read_all_db(val[0], val[1])}
-    ops.read_all_db(val[0], val[1])
+    ops = Operation(val[0], main_db)
+    function_dict = {'Read Data': [ops.read_all_db, val[0]],
+                     'Modify Data': [ops.modify, val[0]],
+                     'Remove Data': [ops.remove_data, val[0]],
+                     'Exit': [exit, None]}
 
 elif val[1] == 'student':
     # see and do student related activities
@@ -104,6 +128,8 @@ elif val[1] == 'advisor':
     # see and do advisor related activities
     pass
 
-
+# Call Open Menu
+if function_dict != {}:
+    menu(function_dict)
 # once everyhthing is done, make a call to the exit function
 exit()

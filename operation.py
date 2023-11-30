@@ -24,20 +24,105 @@ class Operation:
         if p_table:
             p_table.search('ID', uid)
             
-    def __init__(self, uid, role, db: database.Database):
-        self.__uid = uid
-        self.role = role
+    def __init__(self, uid, db: database.Database):
         self.db = db
+        self.__uid = uid
+        self.role = self.__check_role(uid)
+
+    def __check_role(self, uid):
+        login_table = self.db.search('login')
+        if not login_table:
+            raise LookupError("Table Not Found; Can't Validate Roles.")
+        login_data = login_table.search("ID", uid)
+        if not login_data:
+            raise LookupError('No User ID Found')
+        return login_data['role']
+
+    def __update_role(self):
+        # Using Person as a main Table
+        login_table = self.db.search('login')
+        person_table = self.db.search('person')
+        if not (login_table and person_table):
+            raise LookupError("Table Not Found; Can't Update.")
+        # Loop list of ID to Update Role
+        for i in person_table.select('ID'):
+            role_person = person_table.search('ID', i)['role']
+            role_login = login_table.search('ID', i)['role']
+            if role_person != role_login:
+                login_table.search('ID', i)['role'] = role_person
 
     ###################################################################################################################
-    # Admin Only
+    # Admin Related Staff
 
-    def read_all_db(self, uid, role):
-        if uid != self.__uid or role != 'admin' or role != self.role:
+    def read_all_db(self, uid):
+        if uid != self.__uid or self.__role != 'admin':
             raise PermissionError()
-        for i in self.db.table_name():
-            print(self.db.search(i).to_table())
+        for i in range(len(self.db.table_name())):
+            print(self.db.search(self.db.table_name()[i]).to_table())
             print()
+
+    def __remove_by_data(self,uid, table_name, key, value):
+        if uid != self.__uid or self.__role != 'admin':
+            raise PermissionError()
+        target_table = self.db.search(table_name)
+        if not target_table:
+            print('Table Not Found; Nothing was changed')
+            return
+        ls = target_table.select(key)
+        index = ls.index(value)
+        self.__remove_element(uid, target_table, index)
+
+    def __remove_by_order(self, uid, table_name, order):
+        if uid != self.__uid or self.__role != 'admin':
+            raise PermissionError()
+        target_table = self.db.search(table_name)
+        if not target_table:
+            print('Table Not Found; Nothing was changed')
+            return
+        self.__remove_element(uid, target_table, order - 1)
+
+
+    def __modify_data(self, uid, table_name, key_search, val_search, key_mod, val_mod):
+        if uid != self.__uid or self.__role != 'admin' or key_mod == 'ID':
+            raise PermissionError()
+        target_table = self.db.search(table_name)
+        if not target_table:
+            print('Table Not Found; Nothing was changed')
+            return
+        dc = target_table.search(key_search, val_search)
+        if not dc:
+            print('Data Not Found')
+            return
+        if key_mod in dc.keys():
+            dc[key_mod] = val_mod
+
+    def __remove_element(self, uid, table, index):
+        if uid != self.__uid or self.__role != 'admin':
+            raise PermissionError()
+        else:
+            table.remove_data(index)
+
+    def remove_data(self, uid):
+        table_name = input('Target Table: ')
+        mode = input('Remove mode (Data or Order) \nChoice: ')
+        if mode == 'Data':
+            key = input('Key to Remove: ')
+            value = input('Value to Remove: ')
+            self.__remove_by_data(uid, table_name, key, value)
+        elif mode == "Order":
+            order = input('Order to Remove: ')
+            if self.__is_int(order):
+                self.__remove_by_order(uid, table_name, int(order))
+            else:
+                return print('Invalid input...')
+
+    def modify(self, uid):
+        tab_name = input('Table Name: ')
+        key_s = input('Key to Search: ')
+        val_s = input('Searching Value: ')
+        key_m = input('Key to Modify: ')
+        val_m = input('Value to Modify: ')
+        self.__modify_data(uid, tab_name, key_s, val_s, key_m, val_m)
 
     ###################################################################################################################
 
@@ -66,10 +151,10 @@ class Operation:
         else:
             raise LookupError("Table not found")
     
-    def __get_role(self, id):
+    def __get_role(self, uid):
         table = self.db.search('persons')
         if table:
-            elem = table.search('ID', id)
+            elem = table.search('ID', uid)
             return elem['role']
         else:
             raise LookupError("Table not found")
@@ -85,13 +170,7 @@ class Operation:
         else:
             ValueError('INVALID ROLE')
 
-    def remove_element(self ,uid, table, index):
-        if self.role != 'admin' or uid != self.__uid:
-            ValueError('No Permission')
-        else:
-            table.data.remove(index)
-
-    def create_project(self, project_title, uid):
+    def create_project(self, uid, project_title):
         if self.__uid != uid:
             raise PermissionError("User ID Not Match")
         else:
@@ -101,11 +180,12 @@ class Operation:
                 if project_id:
                     table.insert(project_id, project_id, uid, '', '', '', 'New')
 
+    # ProjectID generation is Subject to be change
     @staticmethod
     def __gen_project_id(project_title):
         uniqueid = str(time.gmtime().tm_year)[-2:]
         uniqueid += str(time.time_ns())[-8:-3]
-        uniqueid += str(len(i) % 10)
+        uniqueid += str(len(project_title) % 10)
         uniqueid += str(sum([int(i) for i in uniqueid]) % 100)
         return uniqueid
 

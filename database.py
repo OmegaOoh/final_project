@@ -55,20 +55,6 @@ class Table:
     def data(self):
         return self.__data
 
-    def insert(self, new_data):
-        if isinstance(new_data, list):
-            if self.__validate_new_data(new_data[0]):
-                for i in new_data:
-                    if list(self.__data[0].values()) == ['' for _ in self.__data[0].keys()]:
-                        self.__data = []
-                    if self.__validate_new_data(i):
-                        self.__data.append(i)
-        else:
-            if self.__validate_new_data(new_data):
-                if list(self.__data[0].values()) == ['' for _ in self.__data[0].keys()]:
-                    self.__data = []
-                self.__data.append(new_data)
-
     def __validate_new_data(self, x):
         if x.keys() == self.key:
             return True
@@ -82,7 +68,7 @@ class Table:
         return None
 
     def write_to_csv(self):
-        with open(self.table_name + '.csv', 'w', encoding='UTF8',newline='') as f:
+        with open(self.table_name + '.csv', 'w', encoding='UTF8', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(self.key)
             for i in self.__data:
@@ -90,7 +76,8 @@ class Table:
 
     def select(self, key):
         return [i[key] for i in self.data]
-    def remove(self, x):
+
+    def remove_data(self, x):
         return self.__data.pop(x)
 
     def __str__(self):
@@ -103,7 +90,6 @@ class Table:
             ls = self.select(j)
             ls = [len(k) + 15 for k in ls]
             spaces_key[j] = max(ls)
-
 
         # Key
         key_temp = '     |'
@@ -130,12 +116,6 @@ class Table:
         for i in spaces_key.values():
             o_put += "-" * (i + 2) + "|"
         return o_put
-
-
-
-
-
-
 
 
 
