@@ -38,18 +38,13 @@ class Operation:
             raise LookupError('No User ID Found')
         return login_data['role']
 
-    def __update_role(self):
-        # Using Person as a main Table
-        login_table = self.db.search('login')
-        person_table = self.db.search('person')
-        if not (login_table and person_table):
-            raise LookupError("Table Not Found; Can't Update.")
-        # Loop list of ID to Update Role
-        for i in person_table.select('ID'):
-            role_person = person_table.search('ID', i)['role']
-            role_login = login_table.search('ID', i)['role']
-            if role_person != role_login:
-                login_table.search('ID', i)['role'] = role_person
+    def __update_role(self, uid, new_role):
+        if new_role in ['student', 'member', 'lead', 'faculty', 'advisor','admin']:
+            table = self.db.search('login')
+            if table:
+                user_dict = table.search('ID', uid)
+                user_dict['role'] = new_role
+                self.role = new_role
 
     ###################################################################################################################
     # Admin Related Staff
@@ -80,7 +75,6 @@ class Operation:
             print('Table Not Found; Nothing was changed')
             return
         self.__remove_element(uid, target_table, order - 1)
-
 
     def __modify_data(self, uid, table_name, key_search, val_search, key_mod, val_mod):
         if uid != self.__uid or self.__role != 'admin' or key_mod == 'ID':
@@ -126,6 +120,11 @@ class Operation:
 
     ###################################################################################################################
 
+    def read_as_table(self,uid ,table):
+        if uid != self.__uid:
+            raise PermissionError()
+        print(table.to_table())
+
     def __search_for_id(self, mode, query, role: list):
         uid = None
         p_table = self.db.search('persons')
@@ -170,15 +169,27 @@ class Operation:
         else:
             ValueError('INVALID ROLE')
 
-    def create_project(self, uid, project_title):
+    def create_project(self, uid):
         if self.__uid != uid:
             raise PermissionError("User ID Not Match")
         else:
             table = self.db.search('Project')
             if table:
+                name_valid = False
+                project_title = ''
+                while not name_valid:
+                    project_title = input("Insert Your Project Title: ")
+                    if not table.search('Title', project_title):
+                        name_valid = True
+                    else:
+                        print('Name not Valid Please Try Again')
+                if project_title == '' or project_title.isspace():
+                    print('Invalid Project Title')
+                    return
                 project_id = self.__gen_project_id(project_title)
                 if project_id:
                     table.insert(project_id, project_id, uid, '', '', '', 'New')
+                    self.__update_role(uid, 'lead')
 
     # ProjectID generation is Subject to be change
     @staticmethod
@@ -236,7 +247,9 @@ class Operation:
     def send_invites(self, l_uid, search_mode, query):
         if l_uid != self.__uid:
             raise PermissionError("User ID Not Match")
-        uid = self.__search_for_id(search_mode, query, ['student', 'member', 'lead'])
+        s_m = input('Search by Name or by ID \nSearch Mode: ')
+        s_q = input('Search Query: ')
+        uid = self.__search_for_id(s_m, s_q, ['student', 'member', 'lead'])
         if uid:
             i_table = self.db.search('Member_pending_request')
             pr_table = self.db.search('Project')
@@ -247,12 +260,14 @@ class Operation:
             else:
                 raise LookupError("Table not found")
         else:
-            print('No Receiver uid found')
+            print('No Receiver found')
 
-    def request_advisor(self, l_uid, search_mode, query):
+    def request_advisor(self, l_uid):
         if l_uid != self.__uid:
             raise PermissionError("User ID Not Match")
-        uid = self.__search_for_id(search_mode, query, ['faculty', 'advisor'])
+        s_m = input('Search by Name or by ID \nSearch Mode: ')
+        s_q = input('Search Query: ')
+        uid = self.__search_for_id(s_m, s_q, ['faculty', 'advisor'])
         if uid:
             i_table = self.db.search('Advisor_pending_request')
             pr_table = self.db.search('Project')
@@ -261,11 +276,11 @@ class Operation:
                 project_id = pr_table.search('lead', l_uid)['ProjectID']
                 i_table.insert(project_id, uid, 'Pending', 'Pending')
             else:
-                LookupError("Table not found")
+                LookupError("Table found")
         else:
             print('No Receiver uid found')
 
-    def accept_deny_request(self, request, response: bool):
+    def __accept_deny_request(self, request, response: bool):
         if not (request['response'] in ['Accepted', 'Denied'] and request['Response_date'] == ''):
             print('Request Already Response')
             return
@@ -274,7 +289,37 @@ class Operation:
         else:
             request['Response'] = 'Denied'
         request['Response_date'] = self.time_format()
-        
+
+    def response_request_menu(self, uid, table):
+        if uid != self.__uid or not isinstance(table, Table):
+            raise PermissionError()
+        # Print all user's request
+        req_dict = {}
+        request_data = []
+        for i in range(len(table.data)):
+            request_data = table.data[i]
+            if request_data['ReceiverID']:
+                project_id = request_data['ProjectID']
+                print(f'{i+1}. Project: {project_id}')
+                req_dict[str(i+1)] = request_data['ProjectID']
+        while True:
+            print("1. Response \n 2. Return")
+            c = input('Choice: ')
+            r = False
+            if c in ['1', '2']:
+                if c == '1':
+                    while True:
+                        inv = input('Select Request: ')
+                        if inv in req_dict:
+                            print('1 to Accept 2 to Deny')
+                            r = input('Your Response: ')
+                            _map = {'1': True, '2': False}
+                            self.__accept_deny_request(request_data, _map[r])
+                            break
+                if c == '2':
+                    return
+                break
+
     def submit(self, uid, pid, doc):
         if uid != self.__uid:
             raise PermissionError("User ID Not Match")
@@ -283,7 +328,7 @@ class Operation:
             raise LookupError("Table not found")
         proj_detail = pr_table.search('ID', pid)
         if not proj_detail:
-            raise LookupError['Project Not Found']
+            raise LookupError('Project Not Found')
         if proj_detail['lead'] != uid:
             raise PermissionError("User does not Have Permission")
 
@@ -298,5 +343,7 @@ class Operation:
                    'Response_date': 'Pending'
                    }
         table.insert(request)
+
+
             
 

@@ -20,13 +20,13 @@ def initializing():
 
     if 'Project.csv' not in csv_ls:
         table = database.Table("Project", {"ID": '',
-                                                            'Title': '',
-                                                            'Lead': '',
-                                                            'Member1': '',
-                                                            'Member2': '',
-                                                            'Advisor': '',
-                                                            'Status': ''
-                                                            })
+                                                             'Title': '',
+                                                             'Lead': '',
+                                                             'Member1': '',
+                                                             'Member2': '',
+                                                             'Advisor': '',
+                                                             'Status': ''
+                                                             })
         main_db.insert(table)
     if 'Advisor_pending_request.csv' not in csv_ls:
         table = database.Table('Advisor_pending_request', {"ProjectID": '',
@@ -80,13 +80,12 @@ def menu(func_dict):
                 func_key = select_dict[c]
                 func = func_dict[func_key][0]
                 params = func_dict[func_key][1]
-                func(params)
+                func(*params)
                 break
+                print('Invalid Input')
 
-# Match Function name to its parameter
 
 ########################################################################################################################
-
 def exit():
     for i in main_db.table_name():
         table = main_db.search(i)
@@ -100,36 +99,40 @@ print(main_db.search('login'))
 val = login()
 print(val)
 
+ops = Operation(val[0], main_db)
 if not val:
     raise LookupError()
 
 function_dict = {}
 if val[1] == 'admin':
     # see and do admin related activities
-    ops = Operation(val[0], main_db)
-    function_dict = {'Read Data': [ops.read_all_db, val[0]],
-                     'Modify Data': [ops.modify, val[0]],
-                     'Remove Data': [ops.remove_data, val[0]],
+    function_dict = {'Read Data': [ops.read_all_db, [val[0]]],
+                     'Modify Data': [ops.modify, [val[0]]],
+                     'Remove Data': [ops.remove_data, [val[0]]],
                      'Exit': [exit, None]}
 
 elif val[1] == 'student':
     # see and do student related activities
-    pass
+    function_dict = {'Create Project': [ops.create_project, [val[0],]]}
 elif val[1] == 'member':
     # see and do member related activities
-    pass
+    function_dict = {}
 elif val[1] == 'lead':
     # see and do lead related activities
-    pass
+    function_dict = {}
 elif val[1] == 'faculty':
     # see and do faculty related activities
-    pass
+    function_dict = {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
+                     'Response To Request': [ops.response_request_menu, [val[0], 'Advisor_pending_request']],
+                     'Exit': [exit, None]}
 elif val[1] == 'advisor':
     # see and do advisor related activities
-    pass
+    function_dict = {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
+                     'Response To Request': [ops.response_request_menu, [val[0], 'Advisor_pending_request']],
+                     'Exit': [exit, None]}
 
 # Call Open Menu
 if function_dict != {}:
     menu(function_dict)
-# once everyhthing is done, make a call to the exit function
+# once everything is done, make a call to the exit function
 exit()
