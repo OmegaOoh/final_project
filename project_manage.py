@@ -109,27 +109,38 @@ if val[1] == 'admin':
     function_dict = {'Read Data': [ops.read_all_db, [val[0]]],
                      'Modify Data': [ops.modify, [val[0]]],
                      'Remove Data': [ops.remove_data, [val[0]]],
-                     'Exit': [exit, None]}
+                     'Exit': [exit, [None]]}
 
 elif val[1] == 'student':
     # see and do student related activities
-    function_dict = {'Create Project': [ops.create_project, [val[0],]]}
+    function_dict = {'Create Project': [ops.create_project, [val[0]]],
+                     'Invitation': [ops.response_request_menu,[val[0], 'Member_pending_request']],
+                     'Exit': [exit, None]}
 elif val[1] == 'member':
     # see and do member related activities
-    function_dict = {}
+    function_dict = {'See Project Detail': [ops.show_user_project, [val[0]]],
+                     'Show Invitation': [ops.response_request_menu, [val[0], 'Member_pending_request']],
+                     'Exit': [exit, [None]]}
 elif val[1] == 'lead':
     # see and do lead related activities
-    function_dict = {}
+    function_dict = {'Show Project Detail': [ops.show_user_project, [val[0]]],
+                     'Find Member': [ops.read_filtered_person, [val[0], 'type', 'student']],
+                     'Modify Project Detail': [ops.modify_project_detail, [val[0]]],
+                     'Find Advisor': [ops.read_filtered_person, [val[0], 'type', 'faculty']],
+                     'Sends Invites': [ops.send_invites, [val[0]]],
+                     'Submit': [ops.submit, [val[0]]],
+                     'Exit': [exit, [None]]
+                     }
 elif val[1] == 'faculty':
     # see and do faculty related activities
     function_dict = {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
-                     'Response To Request': [ops.response_request_menu, [val[0], 'Advisor_pending_request']],
-                     'Exit': [exit, None]}
+                     'Show Request': [ops.response_request_menu, [val[0], 'Advisor_pending_request']],
+                     'Exit': [exit, [None]]}
 elif val[1] == 'advisor':
     # see and do advisor related activities
     function_dict = {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
                      'Response To Request': [ops.response_request_menu, [val[0], 'Advisor_pending_request']],
-                     'Exit': [exit, None]}
+                     'Exit': [exit, [None]]}
 
 # Call Open Menu
 if function_dict != {}:

@@ -120,10 +120,20 @@ class Operation:
 
     ###################################################################################################################
 
-    def read_as_table(self,uid ,table):
+    def read_as_table(self,uid , table):
         if uid != self.__uid:
             raise PermissionError()
         print(table.to_table())
+
+    def read_filtered_person(self, uid, key, val):
+        if uid != self.__uid:
+            raise PermissionError()
+        project = self.db.search('persons')
+        if project:
+            filtered = project.filter(lambda x: x[key] == val)
+            print(filtered.to_table())
+        else:
+            raise LookupError('Table not found')
 
     def __search_for_id(self, mode, query, role: list):
         uid = None
@@ -244,7 +254,17 @@ class Operation:
                             break
                 break
 
-    def send_invites(self, l_uid, search_mode, query):
+    def show_user_project(self, uid):
+        if uid != self.__uid:
+            raise PermissionError()
+        project = self.db.search('Project')
+        if project:
+            filtered = project.filter(lambda x: x['lead'] == uid or x['member1'] == uid or x['member2'] == uid)
+            print(filtered.to_table())
+        else:
+            raise LookupError('Table not found')
+
+    def send_invites(self, l_uid):
         if l_uid != self.__uid:
             raise PermissionError("User ID Not Match")
         s_m = input('Search by Name or by ID \nSearch Mode: ')
@@ -280,12 +300,13 @@ class Operation:
         else:
             print('No Receiver uid found')
 
-    def __accept_deny_request(self, request, response: bool):
+    def __accept_deny_request(self, request, response: bool, uid, to_be):
         if not (request['response'] in ['Accepted', 'Denied'] and request['Response_date'] == ''):
             print('Request Already Response')
             return
         if response:
             request['Response'] = 'Accepted'
+            self.__update_role(uid, to_be)
         else:
             request['Response'] = 'Denied'
         request['Response_date'] = self.time_format()
@@ -296,6 +317,9 @@ class Operation:
         # Print all user's request
         req_dict = {}
         request_data = []
+        to_be = 'member'
+        if self.role in ['faculty', 'advisor']:
+            to_be = 'advisor'
         for i in range(len(table.data)):
             request_data = table.data[i]
             if request_data['ReceiverID']:
@@ -314,30 +338,28 @@ class Operation:
                             print('1 to Accept 2 to Deny')
                             r = input('Your Response: ')
                             _map = {'1': True, '2': False}
-                            self.__accept_deny_request(request_data, _map[r])
+                            self.__accept_deny_request(request_data, _map[r], uid, to_be)
                             break
                 if c == '2':
                     return
                 break
 
-    def submit(self, uid, pid, doc):
+    def submit(self, uid):
         if uid != self.__uid:
             raise PermissionError("User ID Not Match")
         pr_table = self.db.search('Project')
         if not pr_table:
             raise LookupError("Table not found")
-        proj_detail = pr_table.search('ID', pid)
+        proj_detail = pr_table.search('lead', uid)
         if not proj_detail:
             raise LookupError('Project Not Found')
-        if proj_detail['lead'] != uid:
-            raise PermissionError("User does not Have Permission")
-
         table = self.db.search('Pending_project_approval')
         if not table:
             raise LookupError("Table not found")
+        pid = proj_detail['ProjectID']
 
         request = {'ProjectID': pid,
-                   'Document': doc,
+                   'Document': '',
                    'Advisor': proj_detail['Advisor'],
                    'Response': 'Pending',
                    'Response_date': 'Pending'

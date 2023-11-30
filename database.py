@@ -77,8 +77,17 @@ class Table:
     def select(self, key):
         return [i[key] for i in self.data]
 
+    def __filter(self, condition):
+        filtered_table = Table(self.table_name + '_filtered', [])
+        for item1 in self.data:
+            if condition(item1):
+                filtered_table.data.append(item1)
+        return filtered_table
+
     def remove_data(self, x):
         return self.__data.pop(x)
+
+
 
     def __str__(self):
         return f'{self.__table_name} : {self.__data}'
@@ -116,7 +125,6 @@ class Table:
         for i in spaces_key.values():
             o_put += "-" * (i + 2) + "|"
         return o_put
-
 
 
 # # Test code
