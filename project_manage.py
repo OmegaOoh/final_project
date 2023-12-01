@@ -126,10 +126,9 @@ def update_function(params):
             func_dict.pop('Request Advisor')
         return func_dict
 
-
     elif params[1] == 'faculty':
         # see and do faculty related activities
-        return {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
+        return {'Read Project Detail': [ops.read_as_table, [params[0], main_db.search('Project')]],
                 'Show Request': [ops.response_request_menu, [params[0],
                                  main_db.search('Advisor_pending_request')]],
                 'Exit': [exit, [None]]}

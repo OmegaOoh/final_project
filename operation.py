@@ -390,38 +390,37 @@ class Operation:
         to_be = 'member'
         if self.role in ['faculty', 'advisor']:
             to_be = 'advisor'
-        print("Request: ")
+        print("Inbox: ")
         request_data = table.filter(lambda x: x['ReceiverID'] == uid)
         request_data = request_data.filter(lambda x: x['Response'] == 'Pending')
-
-        for i in range(len(request_data.data)):
-            project_detail = pr_table.search('ProjectID', request_data.data[i]['ProjectID'])
-            if project_detail:
-                print(f'{i+1}. Project: {project_detail["ProjectID"]} {project_detail["Title"]}')
-                req_dict[str(i+1)] = request_data.data[i]
-
-        if req_dict == {}:
+        if all(i == '' for i in request_data.data[0].values()):
             print('Empty Inbox')
             print()
             return
+        else:
+            for i in range(len(request_data.data)):
+                project_detail = pr_table.search('ProjectID', request_data.data[i]['ProjectID'])
+                if project_detail:
+                    print(f'{i+1}. Project: {project_detail["ProjectID"]} {project_detail["Title"]}')
+                    req_dict[str(i+1)] = request_data.data[i]
 
-        while True:
-            print('Choice')
-            print("1. Response \n2. Return")
-            c = input('Choice: ')
-            if c in ['1', '2']:
-                if c == '1':
-                    while True:
-                        inv = input('Select Request: ')
-                        if inv in req_dict:
-                            print('1 to Accept 2 to Deny')
-                            r = input('Your Response: ')
-                            _map = {'1': True, '2': False}
-                            self.__accept_deny_request(req_dict[inv], _map[r], uid, to_be)
-                            break
-                if c == '2':
-                    return
-                break
+            while True:
+                print('Choice')
+                print("1. Response \n2. Return")
+                c = input('Choice: ')
+                if c in ['1', '2']:
+                    if c == '1':
+                        while True:
+                            inv = input('Select Request: ')
+                            if inv in req_dict:
+                                print('1 to Accept 2 to Deny')
+                                r = input('Your Response: ')
+                                _map = {'1': True, '2': False}
+                                self.__accept_deny_request(req_dict[inv], _map[r], uid, to_be)
+                                break
+                    if c == '2':
+                        return
+                    break
 
     def submit(self, uid):
         if uid != self.__uid:
