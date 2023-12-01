@@ -98,16 +98,35 @@ def update_function(params):
                 'Exit': [exit, [None]]}
     elif params[1] == 'lead':
         # see and do lead related activities
-        return {'Show Project Detail': [ops.show_user_project, [params[0]]],
-                'Modify Project Detail': [ops.modify_project_detail, [params[0]]],
-                'Find Member': [ops.read_filtered_person, [params[0], 'type', 'student']],
-                'Sends Invites': [ops.send_invites, [params[0]]],
-                'Find Advisor': [ops.read_filtered_person, [params[0], 'type', 'faculty']],
-                'Request Advisor': [ops.request_advisor, [params[0]]],
-                'Show Invitation': [ops.response_request_menu, [params[0],
-                                    main_db.search('Member_pending_request')]],
-                'Submit': [ops.submit, [params[0]]],
-                'Exit': [exit, [None]]}
+        pr_table = main_db.search('Project')
+        project = pr_table.search('Lead', userid)
+        member_inv = main_db.search('Member_pending_request').filter(lambda x: x['ProjectID'] == project['ProjectID'])
+        advisor_inv = main_db.search('Advisor_pending_request').filter(lambda x: x['ProjectID'] == project['ProjectID'])
+        func_dict = {'Show Project Detail': [ops.show_user_project, [params[0]]],
+                     'Modify Project Detail': [ops.modify_project_detail, [params[0]]],
+                     'Find Member': [ops.read_filtered_person, [params[0], 'type', 'student']],
+                     'Sends Invites': [ops.send_invites, [params[0]]],
+                     'Find Advisor': [ops.read_filtered_person, [params[0], 'type', 'faculty']],
+                     'Request Advisor': [ops.request_advisor, [params[0]]],
+                     'Show Invitation': [ops.response_request_menu, [params[0],
+                                         main_db.search('Member_pending_request')]],
+                     'Show Sent Member Invitation': [ops.read_as_table, [val[0], member_inv]],
+                     'Show Sent Advisor Request': [ops.read_as_table, [val[0], advisor_inv]],
+                     'Submit': [ops.submit, [params[0]]],
+                     'Exit': [exit, [None]]}
+
+        # Remove Ability to Find and Send Member Invites
+        if project['Member1'] != '' and project['Member2'] != '':
+            func_dict.pop('Find Member')
+            func_dict.pop('Sends Invites')
+
+        # Remove Ability to Find and Request Advisor
+        if project['Advisor'] != '':
+            func_dict.pop('Find Advisor')
+            func_dict.pop('Request Advisor')
+        return func_dict
+
+
     elif params[1] == 'faculty':
         # see and do faculty related activities
         return {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],

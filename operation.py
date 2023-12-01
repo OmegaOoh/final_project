@@ -80,15 +80,12 @@ class Operation:
                     pr_table.search('ProjectID', pr_id)['Member1'] = i['ReceiverID']
                 elif project and pr_table.search('ProjectID', pr_id)['Member2'] == '':
                     pr_table.search('ProjectID', pr_id)['Member2'] = i['ReceiverID']
-                mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id)
+                mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id and x['Response'] == 'Pending')
                 if mem_pending_req:
                     if project['Member1'] != '' and project['Member2'] != '':
                         for j in mem_pending_req.data:
                             j['Response'] = 'Expired'
                             j['Response_date'] = self.time_format()
-
-
-
 
     ###################################################################################################################
     # Admin Related Staff
@@ -164,7 +161,7 @@ class Operation:
 
     ###################################################################################################################
 
-    def read_as_table(self,uid , table):
+    def read_as_table(self, uid, table):
         if uid != self.__uid:
             raise PermissionError()
         print(table.to_table())
@@ -329,7 +326,12 @@ class Operation:
             pr_table = self.db.search('Project')
             if i_table and pr_table:
                 # Find Project ID and Project Lead by UID
-                project_id = pr_table.search('Lead', l_uid)['ProjectID']
+                project_dict = pr_table.search('Lead', l_uid)
+                project_id = project_dict['ProjectID']
+
+                if len(i_table.filter(lambda x: x['ReceiverID'] == uid and x['Response'] == 'Pending').data) != 0:
+                    print('You already invites this person')
+                    return
                 i_table.insert({"ProjectID": project_id,
                                 "ReceiverID": uid,
                                 "Response": 'Pending',
@@ -394,8 +396,9 @@ class Operation:
 
         for i in range(len(request_data.data)):
             project_detail = pr_table.search('ProjectID', request_data.data[i]['ProjectID'])
-            print(f'{i+1}. Project: {project_detail["ProjectID"]} {project_detail["Title"]}')
-            req_dict[str(i+1)] = request_data.data[i]
+            if project_detail:
+                print(f'{i+1}. Project: {project_detail["ProjectID"]} {project_detail["Title"]}')
+                req_dict[str(i+1)] = request_data.data[i]
 
         if req_dict == {}:
             print('Empty Inbox')
