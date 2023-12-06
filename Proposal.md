@@ -4,12 +4,20 @@
 1. To Evaluate the project or Proposal
 2. After Submission of Student
 3. Advisor Can see the submission but can't approve it yet
-4. Advisor need to assign another 2 Faculties to review the project
-5. All the faculties that assign to review the project and Project's Advisor need to approve the project,
+4. Advisor need to assign another 2 Faculties and another 5 Students to review the project and 
+5. All the Reviewer that assign to review the project and Project's Advisor need to approve the project,
 In order to completely approve projects
-6. All Reviewer and Advisor review the project and response with Approve or Deny
+6. All Reviewer review the project and response with score maximum of 10
 7. Add in Presentation Appointment for Advisor
-8. Summarize the result
+8. Presentation have maximum score of 10
+9. Summarize the result
+
+### To summarize the result
+Faculty score weight 90% (30% Each)
+
+Student score weight 10% (2% Each)
+
+score >= 50 to pass
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -32,6 +40,15 @@ In order to completely approve projects
   - Project_Advisor
   - Response
   - Date_of_response
+
+### New csv file  Score_sheet
+  - Project ID
+  - Reviewer 1 
+  - Reviewer 2 
+  - Advisor 
+  - Student 1-5 
+  - Score initialize at 0
+
 ------------------------------------------------------------------------------------------------------------------------
 ## Code Outline
 this code outline is under evaluate menu of faculties
