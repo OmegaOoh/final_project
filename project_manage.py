@@ -134,9 +134,10 @@ def update_function(params):
                 'Exit': [exit, [None]]}
     elif params[1] == 'advisor':
         # see and do advisor related activities
-        return {'Read Project Detail': [ops.read_as_table, main_db.search('Project')],
+        return {'Read Project Detail': [ops.read_as_table, [params[0], main_db.search('Project')]],
                 'Show Request': [ops.response_request_menu, [params[0],
                                  main_db.search('Advisor_pending_request')]],
+                'Evaluate': [ops.evaluate, [params[0]]],
                 'Exit': [exit, [None]]}
 
 

@@ -67,8 +67,9 @@ class Operation:
                 adv_pending_req = adv_req.filter(lambda x: x['ProjectID'] == pr_id)
                 if adv_pending_req:
                     for j in adv_pending_req.data:
-                        j['Response'] = 'Expired'
-                        j['Response_date'] = self.time_format()
+                        if j['Response'] == 'Pending':
+                            j['Response'] = 'Expired'
+                            j['Response_date'] = self.time_format()
 
         mem_acc_req = mem_req.filter(lambda x: x['Response'] == 'Accepted')
 
@@ -76,16 +77,18 @@ class Operation:
             for i in mem_acc_req.data:
                 pr_id = i['ProjectID']
                 project = pr_table.search('ProjectID', pr_id)
-                if project and project['Member1'] == '':
-                    pr_table.search('ProjectID', pr_id)['Member1'] = i['ReceiverID']
-                elif project and pr_table.search('ProjectID', pr_id)['Member2'] == '':
-                    pr_table.search('ProjectID', pr_id)['Member2'] = i['ReceiverID']
-                mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id and x['Response'] == 'Pending')
-                if mem_pending_req:
-                    if project['Member1'] != '' and project['Member2'] != '':
-                        for j in mem_pending_req.data:
-                            j['Response'] = 'Expired'
-                            j['Response_date'] = self.time_format()
+                if project:
+                    if project and project['Member1'] == '':
+                        pr_table.search('ProjectID', pr_id)['Member1'] = i['ReceiverID']
+                    elif project and pr_table.search('ProjectID', pr_id)['Member2'] == '':
+                        pr_table.search('ProjectID', pr_id)['Member2'] = i['ReceiverID']
+                    mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id and x['Response'] == 'Pending')
+                    if mem_pending_req:
+                        if project['Member1'] != '' and project['Member2'] != '':
+                            for j in mem_pending_req.data:
+                                if j['Response'] == 'Pending':
+                                    j['Response'] = 'Expired'
+                                    j['Response_date'] = self.time_format()
 
     ###################################################################################################################
     # Admin Related Staff
@@ -318,6 +321,7 @@ class Operation:
 
         s_q = input('Search Query: ')
         uid = self.__search_for_id(s_m, s_q, 'student')
+        # Return if it is your self
         if uid == l_uid:
             print("You Can't Invite Your Self")
             return
@@ -328,9 +332,11 @@ class Operation:
                 # Find Project ID and Project Lead by UID
                 project_dict = pr_table.search('Lead', l_uid)
                 project_id = project_dict['ProjectID']
-
-                if len(i_table.filter(lambda x: x['ReceiverID'] == uid and x['Response'] == 'Pending').data) != 0:
-                    print('You already invites this person')
+                # Check if Duplicates
+                filtered_table = i_table.filter(lambda x: x['ProjectID'] == project_id)
+                filtered_table = filtered_table.filter(lambda x: x['ReceiverID'] == uid and x['Response'] == 'Pending')
+                if not all(i == '' for i in filtered_table.data[0].values()):
+                    print('You already sent to this person')
                     return
                 i_table.insert({"ProjectID": project_id,
                                 "ReceiverID": uid,
@@ -355,15 +361,22 @@ class Operation:
             pr_table = self.db.search('Project')
             if i_table and pr_table:
                 # Find Project ID and Project Lead by UID
-                project_id = pr_table.search('Lead', l_uid)['ProjectID']
+                project_dict = pr_table.search('Lead', l_uid)
+                project_id = project_dict['ProjectID']
+                # Check if Duplicates
+                filtered_table = i_table.filter(lambda x: x['ProjectID'] == project_id)
+                filtered_table = filtered_table.filter(lambda x: x['ReceiverID'] == uid and x['Response'] == 'Pending')
+                if not all(i == '' for i in filtered_table.data[0].values()):
+                    print('You already sent to this person')
+                    return
                 i_table.insert({"ProjectID": project_id,
                                 "ReceiverID": uid,
                                 "Response": 'Pending',
                                 "Response_date": ''})
             else:
-                LookupError("Table found")
+                raise LookupError("Table not found")
         else:
-            print('No Receiver uid found')
+            print('No Receiver found')
 
     def __accept_deny_request(self, request, response: bool, uid, to_be):
         if request['Response'] != 'Pending' and request['Response_date'] != '':
@@ -387,9 +400,16 @@ class Operation:
             raise LookupError("Project Table not Found")
         # Print all user's request
         req_dict = {}
-        to_be = 'member'
-        if self.role in ['faculty', 'advisor']:
+        to_be = ''
+        if table.table_name == "Member_pending_request":
+            to_be = 'member'
+        if table.table_name == "Advisor_pending_request":
             to_be = 'advisor'
+
+        # Chck if to_be role is correctly assign(Return if not)
+        if to_be == '':
+            return
+        # Read All inbox
         print("Inbox: ")
         request_data = table.filter(lambda x: x['ReceiverID'] == uid)
         request_data = request_data.filter(lambda x: x['Response'] == 'Pending')
@@ -403,7 +423,7 @@ class Operation:
                 if project_detail:
                     print(f'{i+1}. Project: {project_detail["ProjectID"]} {project_detail["Title"]}')
                     req_dict[str(i+1)] = request_data.data[i]
-
+            # Give User a Choice to Return or Response to request
             while True:
                 print('Choice')
                 print("1. Response \n2. Return")
@@ -428,7 +448,7 @@ class Operation:
         pr_table = self.db.search('Project')
         if not pr_table:
             raise LookupError("Table not found")
-        proj_detail = pr_table.search('lead', uid)
+        proj_detail = pr_table.search('Lead', uid)
         if not proj_detail:
             raise LookupError('Project Not Found')
         table = self.db.search('Pending_project_approval')
@@ -436,14 +456,24 @@ class Operation:
             raise LookupError("Table not found")
         pid = proj_detail['ProjectID']
 
+        # Currently Document stored as simple string to represent its filename
+        doc = input('Insert Document: ')
         request = {'ProjectID': pid,
-                   'Document': '',
+                   'Document': doc,
                    'Advisor': proj_detail['Advisor'],
                    'Response': 'Pending',
-                   'Response_date': 'Pending'
+                   'Response_date': ''
                    }
         table.insert(request)
 
+    def evaluate(self, uid):
+        if uid != self.__uid:
+            raise PermissionError("User ID Not Match")
+        app_table = self.db.search("Pending_project_approval")
+        if not app_table:
+            raise LookupError("Table not found")
+        pr_table = self.db.search("Project")
+        if not pr_table:
+            raise PermissionError("User ID Not Match")
 
-            
-
+        print("Project Status Changed.")
