@@ -49,19 +49,13 @@ def initializing():
                                                                               'Response_date': ''})
 
         main_db.insert(table)
+    if "Pending_Reviewer_Request " not in csv_ls:
+        table = database.Table("Pending_Reviewer_Request ", {'ProjectID': '',
+                                                                              'Reviewer': '',
+                                                                              'Response': '',
+                                                                              'Response_date': ''})
 
-    if 'Score_Sheet' not in csv_ls:
-        table = database.Table("Score_Sheet", {'ProjectID': '',
-                                                                 'Evaluator1': '',
-                                                                 'Evaluator2': '',
-                                                                 'Advisor':  '',
-                                                                 'Student1': '',
-                                                                 'Student2': '',
-                                                                 'Student3': '',
-                                                                 'Student4': '',
-                                                                 'Student5': '',
 
-                                                          })
 
 
 def login():

@@ -5,6 +5,9 @@ from database import Table
 
 # Handle Common Methods
 class Session:
+    __valid_role = ['student', 'member', 'lead',
+                  'faculty', 'advisor','admin',
+                  'faculty/reviewer', 'advisor/reviewer']
     @staticmethod
     def time_format():
         curr_time = time.localtime()
@@ -42,7 +45,7 @@ class Session:
         return login_data['role']
 
     def __update_role(self, uid, new_role):
-        if new_role in ['student', 'member', 'lead', 'faculty', 'advisor','admin']:
+        if new_role in self.__valid_role:
             table = self.db.search('login')
             if table:
                 user_dict = table.search('ID', uid)
@@ -205,7 +208,7 @@ class Session:
 
     @role.setter
     def role(self, r):
-        if r in ['student', 'member', 'lead', 'faculty', 'advisor', 'admin']:
+        if r in self.__valid_role:
             self.__role = r
         else:
             ValueError('INVALID ROLE')
@@ -507,9 +510,11 @@ class Session:
                     if r == '2':
                         target[0]["Response"] = 'Denied'
                         target[0]["Response_date"] = self.time_format()
-                # Start Evaluation Process
+                # Change User Role and Return to Menu(To start Invitation Process)
                 if status == 'Ongoing':
-                    pass  # TODO Add Process to Evaluation Steps
+                    self.role += '/reviewer'
+                    self.__update_role(uid, self.role)
+                    return
 
                 # Return if project is completed(Should not be)
                 if status == 'Completed':
