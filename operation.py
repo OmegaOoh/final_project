@@ -8,7 +8,9 @@ class Session:
     @staticmethod
     def time_format():
         curr_time = time.localtime()
-        formatted_time = str(curr_time.tm_mon) + '/' + str(curr_time.tm_mday) + '/' + str(curr_time.tm_year)
+        formatted_time = (str(curr_time.tm_mon)
+                          + '/' + str(curr_time.tm_mday)
+                          + '/' + str(curr_time.tm_year))
         return formatted_time
     
     @staticmethod
@@ -83,7 +85,8 @@ class Session:
                         pr_table.search('ProjectID', pr_id)['Member1'] = i['ReceiverID']
                     elif project and pr_table.search('ProjectID', pr_id)['Member2'] == '':
                         pr_table.search('ProjectID', pr_id)['Member2'] = i['ReceiverID']
-                    mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id and x['Response'] == 'Pending')
+                    mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id
+                                                               and x['Response'] == 'Pending')
                     if mem_pending_req:
                         if project['Member1'] != '' and project['Member2'] != '':
                             for j in mem_pending_req.data:
@@ -91,7 +94,7 @@ class Session:
                                     j['Response'] = 'Expired'
                                     j['Response_date'] = self.time_format()
 
-    ###################################################################################################################
+    ###############################################################################################
     # Admin Related Staff
 
     def read_all_db(self, uid):
@@ -138,8 +141,7 @@ class Session:
     def __remove_element(self, uid, table, index):
         if uid != self.__uid or self.__role != 'admin':
             raise PermissionError()
-        else:
-            table.remove_data(index)
+        table.remove_data(index)
 
     def remove_data(self, uid):
         table_name = input('Target Table: ')
@@ -163,8 +165,7 @@ class Session:
         val_m = input('Value to Modify: ')
         self.__modify_data(uid, tab_name, key_s, val_s, key_m, val_m)
 
-    ###################################################################################################################
-
+    ###############################################################################################
     def read_as_table(self, uid, table):
         if uid != self.__uid:
             raise PermissionError()
@@ -181,34 +182,23 @@ class Session:
             raise LookupError('Table not found')
 
     def __search_for_id(self, mode, query, type: str):
-        uid = None
         p_table = self.db.search('persons')
         p_table = p_table.filter(lambda x: x['type'] == type)
-        if p_table:
-            # Search mode 'Name' / 'ID'
-            if mode == 'Name':
-                dict_p = p_table.search('first', query)
-                if dict_p:
-                    return dict_p['ID']
-                else:
-                    print('User not found')
-                    return None
-            elif mode == 'ID':
-                dict_p = p_table.search('ID', query)
-                if dict_p:
-                    return query
-                else:
-                    print('User not found')
-        else:
+        if not p_table:
             raise LookupError("Table not found")
-    
-    def __get_role(self, uid):
-        table = self.db.search('persons')
-        if table:
-            elem = table.search('ID', uid)
-            return elem['role']
-        else:
-            raise LookupError("Table not found")
+        # Search mode 'Name' / 'ID'
+        if mode == 'Name':
+            dict_p = p_table.search('first', query)
+            if dict_p:
+                return dict_p['ID']
+            print('User not found')
+            return None
+        if mode == 'ID':
+            dict_p = p_table.search('ID', query)
+            if dict_p:
+                return query
+            print('User not found')
+
         
     @property
     def role(self):
@@ -224,30 +214,29 @@ class Session:
     def create_project(self, uid):
         if self.__uid != uid:
             raise PermissionError("User ID Not Match")
-        else:
-            table = self.db.search('Project')
-            if table:
-                name_valid = False
-                project_title = ''
-                while not name_valid:
-                    project_title = input("Insert Your Project Title: ")
-                    if not table.search('Title', project_title):
-                        name_valid = True
-                    else:
-                        print('Name not Valid Please Try Again')
-                if project_title == '' or project_title.isspace():
-                    print('Invalid Project Title')
-                    return
-                project_id = self.__gen_project_id(project_title)
-                if project_id:
-                    if table.insert({"ProjectID": str(project_id),
-                                     'Title': project_title,
-                                     'Lead': uid,
-                                     'Member1': '',
-                                     'Member2': '',
-                                     'Advisor': '',
-                                     'Status': 'New'}):
-                        self.__update_role(uid, 'lead')
+        table = self.db.search('Project')
+        if table:
+            name_valid = False
+            project_title = ''
+            while not name_valid:
+                project_title = input("Insert Your Project Title: ")
+                if not table.search('Title', project_title):
+                    name_valid = True
+                else:
+                    print('Name not Valid Please Try Again')
+            if project_title == '' or project_title.isspace():
+                print('Invalid Project Title')
+                return
+            project_id = self.__gen_project_id(project_title)
+            if project_id:
+                if table.insert({"ProjectID": str(project_id),
+                                 'Title': project_title,
+                                 'Lead': uid,
+                                 'Member1': '',
+                                 'Member2': '',
+                                 'Advisor': '',
+                                 'Status': 'New'}):
+                    self.__update_role(uid, 'lead')
 
     # ProjectID generation is Subject to be change
     @staticmethod
@@ -261,13 +250,12 @@ class Session:
     def modify_project_detail(self, uid):
         if self.__uid != uid:
             raise PermissionError("User ID Not Match")
+        table = self.db.search('Project')
+        if table:
+            project = table.search('Lead', uid)
+            self.__project_modify_menu(project)
         else:
-            table = self.db.search('Project')
-            if table:
-                project = table.search('Lead', uid)
-                self.__project_modify_menu(project)
-            else:
-                raise LookupError("Table not found")
+            raise LookupError("Table not found")
 
     def __project_modify_menu(self, project):
         while True:
@@ -335,7 +323,8 @@ class Session:
                 project_id = project_dict['ProjectID']
                 # Check if Duplicates
                 filtered_table = i_table.filter(lambda x: x['ProjectID'] == project_id)
-                filtered_table = filtered_table.filter(lambda x: x['ReceiverID'] == uid and x['Response'] == 'Pending')
+                filtered_table = filtered_table.filter(lambda x: x['ReceiverID'] == uid
+                                                       and x['Response'] == 'Pending')
                 if not all(i == '' for i in filtered_table.data[0].values()):
                     print('You already sent to this person')
                     return
@@ -418,12 +407,12 @@ class Session:
             print('Empty Inbox')
             print()
             return
-        else:
-            for i in range(len(request_data.data)):
-                project_detail = pr_table.search('ProjectID', request_data.data[i]['ProjectID'])
-                if project_detail:
-                    print(f'{i+1}. Project: {project_detail["ProjectID"]} {project_detail["Title"]}')
-                    req_dict[str(i+1)] = request_data.data[i]
+        for i in range(len(request_data.data)):
+            project_detail = pr_table.search('ProjectID', request_data.data[i]['ProjectID'])
+            if project_detail:
+                print(f'{i+1}. Project: {project_detail["ProjectID"]} '
+                      f'{project_detail["Title"]}')
+                req_dict[str(i+1)] = request_data.data[i]
             # Give User a Choice to Return or Response to request
             while True:
                 print('Choice')

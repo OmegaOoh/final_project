@@ -1,6 +1,5 @@
 import os
 import database
-import operation
 from operation import Session
 
 main_db = database.Database()
@@ -81,52 +80,71 @@ def login():
         pwd = input('Please enter your password: ')
         if user_dict['password'] == pwd:
             return [user_dict['ID'], user_dict['role']]
-        else:
-            print('Access Denied')
-            print()
-            i += 1
+        print('Access Denied')
+        print()
+        i += 1
     raise PermissionError("Maximum Tried Reached")
 
 
-########################################################################################################################
-# Operation
+###################################################################################################
+# Decide Roles and its function
 def update_function(params):
     if params[1] == 'admin':
         # see and do admin related activities
-        return {'Read Data': [session.read_all_db, [params[0]]],
-                'Modify Data': [session.modify, [params[0]]],
-                'Remove Data': [session.remove_data, [params[0]]],
+        return {'Read Data':
+                    [session.read_all_db, [params[0]]],
+                'Modify Data':
+                    [session.modify, [params[0]]],
+                'Remove Data':
+                    [session.remove_data, [params[0]]],
                 'Exit': [exit, [None]]}
 
-    elif params[1] == 'student':
+    if params[1] == 'student':
         # see and do student related activities
-        return {'Create Project': [session.create_project, [params[0]]],
-                'Show Invitation': [session.response_request_menu, [params[0],
-                                    main_db.search('Member_pending_request')]],
+        return {'Create Project':
+                    [session.create_project, [params[0]]],
+                'Show Invitation':
+                    [session.response_request_menu, [params[0],
+                     main_db.search('Member_pending_request')]],
                 'Exit': [exit, [None]]}
-    elif params[1] == 'member':
+    if params[1] == 'member':
         # see and do member related activities
-        return {'See Project Detail': [session.show_user_project, [params[0]]],
-                'Show Invitation': [session.response_request_menu, [params[0],
-                                    main_db.search('Member_pending_request')]],
+        return {'See Project Detail':
+                    [session.show_user_project, [params[0]]],
+                'Show Invitation':
+                    [session.response_request_menu, [params[0],
+                     main_db.search('Member_pending_request')]],
                 'Exit': [exit, [None]]}
-    elif params[1] == 'lead':
+    if params[1] == 'lead':
         # see and do lead related activities
         pr_table = main_db.search('Project')
         project = pr_table.search('Lead', userid)
-        member_inv = main_db.search('Member_pending_request').filter(lambda x: x['ProjectID'] == project['ProjectID'])
-        advisor_inv = main_db.search('Advisor_pending_request').filter(lambda x: x['ProjectID'] == project['ProjectID'])
-        func_dict = {'Show Project Detail': [session.show_user_project, [params[0]]],
-                     'Modify Project Detail': [session.modify_project_detail, [params[0]]],
-                     'Find Member': [session.read_filtered_person, [params[0], 'type', 'student']],
-                     'Sends Invites': [session.send_invites, [params[0]]],
-                     'Find Advisor': [session.read_filtered_person, [params[0], 'type', 'faculty']],
-                     'Request Advisor': [session.request_advisor, [params[0]]],
-                     'Show Invitation': [session.response_request_menu, [params[0],
-                                         main_db.search('Member_pending_request')]],
-                     'Show Sent Member Invitation': [session.read_as_table, [val[0], member_inv]],
-                     'Show Sent Advisor Request': [session.read_as_table, [val[0], advisor_inv]],
-                     'Submit': [session.submit, [params[0]]],
+        member_inv = (main_db.search('Member_pending_request')
+                      .filter(lambda x: x['ProjectID'] == project['ProjectID']))
+        advisor_inv = (main_db.search('Advisor_pending_request')
+                       .filter(lambda x: x['ProjectID'] == project['ProjectID']))
+
+        func_dict = {'Show Project Detail':
+                         [session.show_user_project, [params[0]]],
+                     'Modify Project Detail':
+                         [session.modify_project_detail, [params[0]]],
+                     'Find Member':
+                         [session.read_filtered_person, [params[0], 'type', 'student']],
+                     'Sends Invites':
+                         [session.send_invites, [params[0]]],
+                     'Find Advisor':
+                         [session.read_filtered_person, [params[0], 'type', 'faculty']],
+                     'Request Advisor':
+                         [session.request_advisor, [params[0]]],
+                     'Show Invitation':
+                         [session.response_request_menu, [params[0],
+                          main_db.search('Member_pending_request')]],
+                     'Show Sent Member Invitation':
+                         [session.read_as_table, [val[0], member_inv]],
+                     'Show Sent Advisor Request':
+                         [session.read_as_table, [val[0], advisor_inv]],
+                     'Submit':
+                         [session.submit, [params[0]]],
                      'Exit': [exit, [None]]}
 
         # Remove Ability to Find and Send Member Invites
@@ -140,13 +158,13 @@ def update_function(params):
             func_dict.pop('Request Advisor')
         return func_dict
 
-    elif params[1] == 'faculty':
+    if params[1] == 'faculty':
         # see and do faculty related activities
         return {'Read Project Detail': [session.read_as_table, [params[0], main_db.search('Project')]],
                 'Show Request': [session.response_request_menu, [params[0],
                                  main_db.search('Advisor_pending_request')]],
                 'Exit': [exit, [None]]}
-    elif params[1] == 'advisor':
+    if params[1] == 'advisor':
         # see and do advisor related activities
         return {'Read Project Detail': [session.read_as_table, [params[0], main_db.search('Project')]],
                 'Show Request': [session.response_request_menu, [params[0],
@@ -155,6 +173,7 @@ def update_function(params):
                 'Exit': [exit, [None]]}
 
 
+# Print out menu and give user ability to use the program
 def menu():
     while True:
         print()
@@ -180,7 +199,7 @@ def menu():
             print('Invalid Input')
 
 
-########################################################################################################################
+###################################################################################################
 def exit():
     for i in main_db.table_name():
         table = main_db.search(i)
