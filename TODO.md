@@ -2,7 +2,7 @@
 ## Project
 - Status of Project includes:
   - 'New' means their proposal didn't get approved by advisor yet.
-  - 'Incomplete' means approved but incomplete Project
+  - 'Ongoing' means approved but incomplete Project
   - 'Completed' mean Advisor approves the project already
 
 #### New csv file and Table Pending_Project_Approval with key

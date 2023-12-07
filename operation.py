@@ -199,7 +199,6 @@ class Session:
                 return query
             print('User not found')
 
-        
     @property
     def role(self):
         return self.__role
@@ -296,6 +295,7 @@ class Session:
         project = self.db.search('Project')
         if project:
             filtered = project.filter(lambda x: uid in [x['Lead'], x['Member1'], x['Member2']])
+            filtered.table_name = uid
             print(filtered.to_table())
         else:
             raise LookupError('Table not found')
@@ -418,19 +418,17 @@ class Session:
                 print('Choice')
                 print("1. Response \n2. Return")
                 c = input('Choice: ')
-                if c in ['1', '2']:
-                    if c == '1':
-                        while True:
-                            inv = input('Select Request: ')
-                            if inv in req_dict:
-                                print('1 to Accept 2 to Deny')
-                                r = input('Your Response: ')
-                                _map = {'1': True, '2': False}
-                                self.__accept_deny_request(req_dict[inv], _map[r], uid, to_be)
-                                break
-                    if c == '2':
-                        return
-                    break
+                if c == '1':
+                    while True:
+                        inv = input('Select Request: ')
+                        if inv in req_dict:
+                            print('1 to Accept 2 to Deny')
+                            r = input('Your Response: ')
+                            _map = {'1': True, '2': False}
+                            self.__accept_deny_request(req_dict[inv], _map[r], uid, to_be)
+                            break
+                if c == '2':
+                    return
 
     def submit(self, uid):
         if uid != self.__uid:
@@ -456,7 +454,7 @@ class Session:
                    }
         table.insert(request)
 
-    def evaluate(self, uid):
+    def advisor_evaluate(self, uid):
         if uid != self.__uid:
             raise PermissionError("User ID Not Match")
         app_table = self.db.search("Pending_project_approval")
@@ -466,11 +464,65 @@ class Session:
         if not pr_table:
             raise PermissionError("User ID Not Match")
 
-        print("Project Status Changed.")
+        # Print all Pending Request
+        app_table = app_table.filter(lambda x: x['Advisor'] == uid
+                                     and x['Status'] != 'Completed')
+
+        req_dict = {}
+        print("Pending Approval Request")
+        if all(i == '' for i in app_table.data[0].values()):
+            print("Inbox Empty")
+            return
+        for i in range(len(app_table.data)):
+            project_detail = pr_table.search('ProjectID', app_table.data[i]['ProjectID'])
+            print(f'{i+1}. {project_detail["ProjectID"]} '
+                  f'{project_detail["Project Title"]}'
+                  f', Current Status: {project_detail["Status"]}')
+            req_dict[str(i+1)] = [app_table.data[i], project_detail]
+        while True:
+            print('Response or Return:')
+            print('1. Response\n2. Return')
+            c = input('Your Choice: ')
+            if c == '1':
+                while True:
+                    print("Please Select Request to Process")
+                    req = input('Select Request: ')
+                    if req in req_dict:
+                        break
+                target = req_dict[req]
+                status = target[1]["Status"]
+                # Approve or Deny Proposal of the project does not request committee to do so
+                if status == 'New':
+                    # Approve or Deny
+                    print("Please Enter Your Response")
+                    print('1. Accept\n2. Deny')
+                    while True:
+                        r = input("Your Response: ")
+                        if r in ["1", "2"]:
+                            break
+                    if r == '1':
+                        target[0]["Response"] = 'Approve'
+                        target[0]["Response_date"] = self.time_format()
+                        target[1]["Status"] = "Ongoing"
+                    if r == '2':
+                        target[0]["Response"] = 'Denied'
+                        target[0]["Response_date"] = self.time_format()
+                # Start Evaluation Process
+                if status == 'Ongoing':
+                    pass  # TODO Add Process to Evaluation Steps
+
+                # Return if project is completed(Should not be)
+                if status == 'Completed':
+                    return
+            if c == '2':
+                return
+            print('Invalid Input\n')
+
+
+
 
 
 class Scoring:
-
     @staticmethod
     def __is_int(x):
         try:
@@ -500,7 +552,6 @@ class Scoring:
                 if 0 <= score <= 10:
                     self.__score += score
                     break
-
 
     def add_presentation_score(self):
         # Max of 5

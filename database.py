@@ -51,6 +51,13 @@ class Table:
     def table_name(self):
         return self.__table_name
 
+    @table_name.setter
+    def table_name(self, new_name):
+        org_name = self.table_name.removesuffix('filtered')
+        # Prevent from change original table name(Only filtered that can be change)
+        if org_name != self.table_name:
+            self.table_name = org_name + new_name
+
     @property
     def data(self):
         return self.__data

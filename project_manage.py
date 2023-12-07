@@ -160,16 +160,20 @@ def update_function(params):
 
     if params[1] == 'faculty':
         # see and do faculty related activities
-        return {'Read Project Detail': [session.read_as_table, [params[0], main_db.search('Project')]],
-                'Show Request': [session.response_request_menu, [params[0],
-                                 main_db.search('Advisor_pending_request')]],
+        return {'Read Project Detail':
+                    [session.read_as_table, [params[0], main_db.search('Project')]],
+                'Show Request':
+                    [session.response_request_menu, [params[0],
+                     main_db.search('Advisor_pending_request')]],
                 'Exit': [exit, [None]]}
     if params[1] == 'advisor':
         # see and do advisor related activities
         return {'Read Project Detail': [session.read_as_table, [params[0], main_db.search('Project')]],
-                'Show Request': [session.response_request_menu, [params[0],
-                                 main_db.search('Advisor_pending_request')]],
-                'Evaluate': [session.evaluate, [params[0]]],
+                'Show Request':
+                    [session.response_request_menu, [params[0],
+                     main_db.search('Advisor_pending_request')]],
+                'Evaluate':
+                    [session.evaluate, [params[0]]],
                 'Exit': [exit, [None]]}
 
 
