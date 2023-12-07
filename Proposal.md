@@ -37,7 +37,6 @@ score >= 50 to pass
 #### New csv file and Table Pending_Reviewer_Request with key
   - Project ID
   - Reviewer_ID
-  - Project_Advisor
   - Response
   - Date_of_response
 

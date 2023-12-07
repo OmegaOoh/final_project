@@ -154,21 +154,36 @@ def update_function(params):
 
     if params[1] == 'faculty':
         # see and do faculty related activities
-        return {'Read Project Detail':
+        func_dict = {'Read Project Detail':
                     [session.read_as_table, [params[0], main_db.search('Project')]],
                 'Show Request':
                     [session.response_request_menu, [params[0],
-                     main_db.search('Advisor_pending_request')]],
-                'Exit': [exit, [None]]}
+                     main_db.search('Advisor_pending_request')]]
+                     }
+        if 'reviewer' in params[1]:
+            # TODO Add Function Name after implement it
+            func_dict['Add Paper Score'] = [session., [params[0]]]
+            func_dict['Add Presentation Score'] = [session., [params[0]]]
+        func_dict['Exit'] = [exit,[None]]
+        return func_dict
+
+
+
     if params[1] == 'advisor':
         # see and do advisor related activities
-        return {'Read Project Detail': [session.read_as_table, [params[0], main_db.search('Project')]],
-                'Show Request':
-                    [session.response_request_menu, [params[0],
-                     main_db.search('Advisor_pending_request')]],
-                'Evaluate':
-                    [session.evaluate, [params[0]]],
-                'Exit': [exit, [None]]}
+        func_dict = {'Read Project Detail': [session.read_as_table, [params[0], main_db.search('Project')]],
+                     'Show Request':
+                         [session.response_request_menu, [params[0],
+                          main_db.search('Advisor_pending_request')]],
+                     'Evaluate':
+                         [session.evaluate, [params[0]]]}
+        if 'reviewer' in params[1]:
+            # TODO Add Function Name after implement it
+            func_dict['Add Paper Score'] = [session., [params[0]]]
+            func_dict['Add Presentation Score'] = [session., [params[0]]]
+            func_dict['Presentation Appointment'] = [session.,[params[0]]]
+        func_dict['Exit'] = [exit, [None]]
+        return func_dict
 
 
 # Print out menu and give user ability to use the program
