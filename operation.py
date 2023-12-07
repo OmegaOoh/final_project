@@ -4,7 +4,7 @@ from database import Table
 
 
 # Handle Common Methods
-class Operation:
+class Session:
     @staticmethod
     def time_format():
         curr_time = time.localtime()

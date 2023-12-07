@@ -1,7 +1,7 @@
 import os
 import database
 import operation
-from operation import Operation
+from operation import Session
 
 main_db = database.Database()
 
@@ -93,21 +93,21 @@ def login():
 def update_function(params):
     if params[1] == 'admin':
         # see and do admin related activities
-        return {'Read Data': [ops.read_all_db, [params[0]]],
-                'Modify Data': [ops.modify, [params[0]]],
-                'Remove Data': [ops.remove_data, [params[0]]],
+        return {'Read Data': [session.read_all_db, [params[0]]],
+                'Modify Data': [session.modify, [params[0]]],
+                'Remove Data': [session.remove_data, [params[0]]],
                 'Exit': [exit, [None]]}
 
     elif params[1] == 'student':
         # see and do student related activities
-        return {'Create Project': [ops.create_project, [params[0]]],
-                'Show Invitation': [ops.response_request_menu, [params[0],
+        return {'Create Project': [session.create_project, [params[0]]],
+                'Show Invitation': [session.response_request_menu, [params[0],
                                     main_db.search('Member_pending_request')]],
                 'Exit': [exit, [None]]}
     elif params[1] == 'member':
         # see and do member related activities
-        return {'See Project Detail': [ops.show_user_project, [params[0]]],
-                'Show Invitation': [ops.response_request_menu, [params[0],
+        return {'See Project Detail': [session.show_user_project, [params[0]]],
+                'Show Invitation': [session.response_request_menu, [params[0],
                                     main_db.search('Member_pending_request')]],
                 'Exit': [exit, [None]]}
     elif params[1] == 'lead':
@@ -116,17 +116,17 @@ def update_function(params):
         project = pr_table.search('Lead', userid)
         member_inv = main_db.search('Member_pending_request').filter(lambda x: x['ProjectID'] == project['ProjectID'])
         advisor_inv = main_db.search('Advisor_pending_request').filter(lambda x: x['ProjectID'] == project['ProjectID'])
-        func_dict = {'Show Project Detail': [ops.show_user_project, [params[0]]],
-                     'Modify Project Detail': [ops.modify_project_detail, [params[0]]],
-                     'Find Member': [ops.read_filtered_person, [params[0], 'type', 'student']],
-                     'Sends Invites': [ops.send_invites, [params[0]]],
-                     'Find Advisor': [ops.read_filtered_person, [params[0], 'type', 'faculty']],
-                     'Request Advisor': [ops.request_advisor, [params[0]]],
-                     'Show Invitation': [ops.response_request_menu, [params[0],
+        func_dict = {'Show Project Detail': [session.show_user_project, [params[0]]],
+                     'Modify Project Detail': [session.modify_project_detail, [params[0]]],
+                     'Find Member': [session.read_filtered_person, [params[0], 'type', 'student']],
+                     'Sends Invites': [session.send_invites, [params[0]]],
+                     'Find Advisor': [session.read_filtered_person, [params[0], 'type', 'faculty']],
+                     'Request Advisor': [session.request_advisor, [params[0]]],
+                     'Show Invitation': [session.response_request_menu, [params[0],
                                          main_db.search('Member_pending_request')]],
-                     'Show Sent Member Invitation': [ops.read_as_table, [val[0], member_inv]],
-                     'Show Sent Advisor Request': [ops.read_as_table, [val[0], advisor_inv]],
-                     'Submit': [ops.submit, [params[0]]],
+                     'Show Sent Member Invitation': [session.read_as_table, [val[0], member_inv]],
+                     'Show Sent Advisor Request': [session.read_as_table, [val[0], advisor_inv]],
+                     'Submit': [session.submit, [params[0]]],
                      'Exit': [exit, [None]]}
 
         # Remove Ability to Find and Send Member Invites
@@ -142,16 +142,16 @@ def update_function(params):
 
     elif params[1] == 'faculty':
         # see and do faculty related activities
-        return {'Read Project Detail': [ops.read_as_table, [params[0], main_db.search('Project')]],
-                'Show Request': [ops.response_request_menu, [params[0],
+        return {'Read Project Detail': [session.read_as_table, [params[0], main_db.search('Project')]],
+                'Show Request': [session.response_request_menu, [params[0],
                                  main_db.search('Advisor_pending_request')]],
                 'Exit': [exit, [None]]}
     elif params[1] == 'advisor':
         # see and do advisor related activities
-        return {'Read Project Detail': [ops.read_as_table, [params[0], main_db.search('Project')]],
-                'Show Request': [ops.response_request_menu, [params[0],
+        return {'Read Project Detail': [session.read_as_table, [params[0], main_db.search('Project')]],
+                'Show Request': [session.response_request_menu, [params[0],
                                  main_db.search('Advisor_pending_request')]],
-                'Evaluate': [ops.evaluate, [params[0]]],
+                'Evaluate': [session.evaluate, [params[0]]],
                 'Exit': [exit, [None]]}
 
 
@@ -194,7 +194,7 @@ val = login()
 
 userid = val[0]
 
-ops = Operation(val[0], main_db)
+session = Session(val[0], main_db)
 if not val:
     raise LookupError()
 
