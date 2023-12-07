@@ -3,6 +3,7 @@ import database
 from database import Table
 
 
+# Handle Common Methods
 class Operation:
     @staticmethod
     def time_format():
@@ -477,3 +478,47 @@ class Operation:
             raise PermissionError("User ID Not Match")
 
         print("Project Status Changed.")
+
+
+class Scoring:
+
+    @staticmethod
+    def __is_int(x):
+        try:
+            int(x)
+            return True
+        except ValueError:
+            return False
+
+    def __init__(self, uid):
+        self.__uid = uid
+        self.__score = 0
+
+    @property
+    def uid(self):
+        return self.__uid
+
+    @property
+    def score(self):
+        return self.__score
+
+    def add_report_score(self):
+        # Max of 10
+        while True:
+            score = input('Enter Your Score: ')
+            if self.__is_int(score):
+                score = int(score)
+                if 0 <= score <= 10:
+                    self.__score += score
+                    break
+
+
+    def add_presentation_score(self):
+        # Max of 5
+        while True:
+            score = input('Enter Your Score: ')
+            if self.__is_int(score):
+                score = int(score)
+                if 0 <= score <= 5:
+                    self.__score += score
+                    break
