@@ -48,16 +48,15 @@ def initializing():
                                                                               'Response_date': ''})
         main_db.insert(table)
 
-        main_db.insert(table)
-    if "Pending_Reviewer_Request " not in csv_ls:
-        table = database.Table("Pending_Reviewer_Request ", {'ProjectID': '',
+    if "Pending_Reviewer_Request" not in csv_ls:
+        table = database.Table("Pending_Reviewer_Request", {'ProjectID': '',
                                                                               'ReceiverID': '',
                                                                               'Response': '',
                                                                               'Response_date': ''})
         main_db.insert(table)
 
-    if "Project_Evaluate_Committee " not in csv_ls:
-        table = database.Table("Project_Evaluate_Committee ", {'ProjectID': '',
+    if "Project_Evaluate_Committee" not in csv_ls:
+        table = database.Table("Project_Evaluate_Committee", {'ProjectID': '',
                                                                                  'Advisor': '',
                                                                                  'Reviewer1': '',
                                                                                  'Reviewer2': '',
@@ -69,8 +68,8 @@ def initializing():
                                                                                  'Status': ''})
         main_db.insert(table)
 
-    if "Project_Score_Result " not in csv_ls:
-        table = database.Table("Project_Score_Result ", {'ProjectID': '',
+    if "Project_Score_Result" not in csv_ls:
+        table = database.Table("Project_Score_Result", {'ProjectID': '',
                                                                          'Advisor': '',
                                                                          'Reviewer1': '',
                                                                          'Reviewer2': '',
@@ -81,7 +80,6 @@ def initializing():
                                                                          'Student5': '',
                                                                          'Status': ''})
         main_db.insert(table)
-
 
 
 def login():
@@ -128,7 +126,6 @@ def update_function(params):
                         main_db.search('Member_pending_request')]]}
 
         if 'reviewer' in params[1]:
-            # TODO Add Function Name after implement it
             func_dict['Add Paper Score'] = [session.add_paper_score, [params[0],func_dict]]
             func_dict['Add Presentation Score'] = [session.add_present_score, [params[0],func_dict]]
 
@@ -199,10 +196,10 @@ def update_function(params):
     if params[1] == 'faculty':
         # see and do faculty related activities
         func_dict = {'Read Project Detail':
-                    [session.read_as_table, [params[0], main_db.search('Project')]],
-                'Show Request':
-                    [session.response_request_menu, [params[0],
-                     main_db.search('Advisor_pending_request')]]
+                        [session.read_as_table, [params[0], main_db.search('Project')]],
+                     'Show Request':
+                        [session.response_request_menu, [params[0],
+                         main_db.search('Advisor_pending_request')]]
                      }
         if 'reviewer' in params[1]:
             func_dict['Add Paper Score'] = [session.add_paper_score, [params[0],func_dict]]
@@ -219,10 +216,9 @@ def update_function(params):
                      'Evaluate':
                          [session.advisor_evaluate, [params[0]]]}
         if 'reviewer' in params[1]:
-            # TODO Add Function Name after implement it
+            func_dict.pop('Evaluate')
             func_dict['Add Paper Score'] = [session.add_paper_score, [params[0],func_dict]]
             func_dict['Add Presentation Score'] = [session.add_present_score, [params[0],func_dict]]
-            func_dict['Presentation Appointment'] = [session.,[params[0]]]
         func_dict['Exit'] = [exit, [None]]
         return func_dict
 
@@ -235,6 +231,7 @@ def menu():
         r = table.search('ID', userid)
         func_dict = update_function([userid, r['role']])
         # Handle Reviewed content
+        print(func_dict)
         if 'reviewer' in r['role'][1]:
             cm_table = main_db.search('Project_Evaluate_Committee')
             if not cm_table:
@@ -267,6 +264,7 @@ def menu():
                         break
             if not role.isspace():
                 session.update_review_status(score_dict[role], func_dict)
+                print(func_dict)
 
         print(f"Login as {userid}. Role: {r['role']}")
         select_dict = {}

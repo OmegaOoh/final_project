@@ -56,7 +56,7 @@ class Table:
         org_name = self.table_name.removesuffix('filtered')
         # Prevent from change original table name(Only filtered that can be change)
         if org_name != self.table_name:
-            self.table_name = org_name + new_name
+            self.__table_name = org_name + new_name
 
     @property
     def data(self):

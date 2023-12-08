@@ -67,6 +67,7 @@ class Session:
             raise LookupError("Table Not Found; Can't Validate Roles.")
         login_data = login_table.search("ID", uid)
         if not login_data:
+            print('UID: ',uid)
             raise LookupError('No User ID Found')
         return login_data['role']
 
@@ -94,7 +95,7 @@ class Session:
         committee_tab = self.db.search("Project_Evaluate_Committee")
         if not committee_tab:
             raise LookupError("Committee Table Not Found")
-        committee_tab = committee_tab.filter(lambda x: x['Statue'] != 'Completed')
+        committee_tab = committee_tab.filter(lambda x: x['Status'] != 'Completed')
         score_tab = self.db.search("Project_Score_Result")
         if not score_tab:
             raise LookupError("Score Sheet Not Found")
@@ -135,11 +136,14 @@ class Session:
 
         rev_acc_req = mem_req.filter(lambda x: x['Response'] == 'Accepted')
         if rev_acc_req and not all(i == '' for i in rev_acc_req.data[0]):
-            for i in mem_acc_req.data:
+            for i in rev_acc_req.data:
+                if i['ReceiverID'] == '':
+                    break
                 pr_id = i['ProjectID']
+                uid = i['ReceiverID']
                 committee_dc = committee_tab.search('ProjectID', pr_id)
                 if committee_dc:
-                    if self.__check_role(i['ReceiverID']) in self.__faculty_role:
+                    if self.__check_role(uid) in self.__faculty_role:
                         if committee_dc['Reviewer1'] == '':
                             committee_tab.search('ProjectID', pr_id)['Reviewer1'] = i['ReceiverID']
                         elif committee_dc['Reviewer2'] == '':
@@ -323,13 +327,13 @@ class Session:
             dict_p = p_table.search('first', query)
             if dict_p:
                 return dict_p['ID']
-            print('User not found')
+            # print('User not found')
             return None
         if mode == 'ID':
             dict_p = p_table.search('ID', query)
             if dict_p:
                 return query
-            print('User not found')
+            # print('User not found')
 
     @property
     def role(self):
@@ -473,6 +477,9 @@ class Session:
         if l_uid != self.__uid:
             raise PermissionError("User ID Not Match")
         s_m = input('Search by Name or by ID \nSearch Mode: ')
+        while s_m not in ['ID', 'Name']:
+            print('Invalid Search Mode')
+            s_m = input('Search by Name or by ID \nSearch Mode: ')
         s_q = input('Search Query: ')
         uid = self.__search_for_id(s_m, s_q, 'faculty')
         if uid == l_uid:
@@ -563,7 +570,7 @@ class Session:
                             r = input('Your Response: ')
                             _map = {'1': True, '2': False}
                             self.__accept_deny_request(req_dict[inv], _map[r], uid, to_be)
-                            break
+                            return
                 if c == '2':
                     return
 
@@ -605,12 +612,13 @@ class Session:
 
         # Print all Pending Request
         app_table = app_table.filter(lambda x: x['Advisor'] == uid
-                                     and x['Status'] != 'Completed')
+                                     and x['Response'] == 'Pending')
 
         req_dict = {}
         print("Pending Approval Request")
         if all(i == '' for i in app_table.data[0].values()):
             print("Inbox Empty")
+            print(app_table)
             return
 
         project_detail = pr_table.search('ProjectID', app_table.data[0]['ProjectID'])
@@ -619,7 +627,7 @@ class Session:
 
         for i in range(len(app_table.data)):
             print(f'{i+1}. {project_detail["ProjectID"]} '
-                  f'{project_detail["Project Title"]}'
+                  f'{project_detail["Title"]}'
                   f', Current Status: {project_detail["Status"]}')
             req_dict[str(i+1)] = [app_table.data[i], project_detail]
         while True:
@@ -643,6 +651,7 @@ class Session:
                         r = input("Your Response: ")
                         if r in ["1", "2"]:
                             break
+                        print('Invalid Input')
                     if r == '1':
                         target[0]["Response"] = 'Approve'
                         target[0]["Response_date"] = self.time_format()
@@ -650,6 +659,7 @@ class Session:
                     if r == '2':
                         target[0]["Response"] = 'Denied'
                         target[0]["Response_date"] = self.time_format()
+                    return
                 # Change User Role and Return to Menu(To start Invitation Process)
                 if status == 'Ongoing':
                     self.role += '/reviewer'
@@ -668,7 +678,7 @@ class Session:
                     if not table:
                         raise LookupError("Project Evaluate Committee Table Not Found")
                     table.insert(committee_dict)
-                    score_dict = {{'ProjectID': project_detail['ProjectID'],
+                    score_dict = {'ProjectID': project_detail['ProjectID'],
                                    'Advisor': 'r + p',
                                    'Reviewer1': 'r + p',
                                    'Reviewer2': 'r + p',
@@ -677,7 +687,7 @@ class Session:
                                    'Student3': 'r + p',
                                    'Student4': 'r + p',
                                    'Student5': 'r + p',
-                                   'Status': 'Ongoing'}}
+                                   'Status': 'Ongoing'}
                     table = self.db.search('Project_Score_Result')
                     return
 
@@ -768,7 +778,6 @@ class Session:
         self.update_review_status(score_dict[role], func_dict)
         self.__check_score()
 
-
     def add_present_score(self, uid, func_dict):
         if uid != self.__uid:
             raise PermissionError("User ID not Match")
@@ -817,4 +826,3 @@ class Session:
                 break
         self.update_review_status(score_dict[role], func_dict)
         self.__check_score()
-        
