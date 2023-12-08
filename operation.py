@@ -6,8 +6,14 @@ from database import Table
 # Handle Common Methods
 class Session:
     __valid_role = ['student', 'member', 'lead',
-                  'faculty', 'advisor','admin',
-                  'faculty/reviewer', 'advisor/reviewer']
+                    'faculty', 'advisor','admin',
+                    'faculty/reviewer', 'advisor/reviewer']
+    __faculty_role = ['faculty', 'advisor',
+                      'faculty/reviewer', 'advisor/reviewer']
+
+    __student_role = ['student', 'member', 'lead',
+                      'student/reviewer', 'member/reviewer', 'lead/reviewer']
+
     @staticmethod
     def time_format():
         curr_time = time.localtime()
@@ -62,16 +68,26 @@ class Session:
         mem_req = self.db.search('Member_pending_request')
         if not mem_req:
             raise LookupError("Member Invites Table not Found")
+        rev_req = self.db.search('Pending_Reviewer_Request')
+        if not rev_req:
+            raise LookupError("Reviewer Invites Table not found")
+        committee_tab = self.db.search("Project_Evaluate_Committee")
+        if not committee_tab:
+            raise LookupError("Committee Table Not Found")
+        committee_tab = committee_tab.filter(lambda x: x['Statue'] != 'Completed')
+        score_tab = self.db.search("Project_Score_Result")
+        if not score_tab:
+            raise LookupError("Score Sheet Not Found")
 
         adv_acc_req = adv_req.filter(lambda x: x['Response'] == 'Accepted')
-        if adv_acc_req:
+        if adv_acc_req and not all(i == '' for i in adv_acc_req.data[0]):
             for i in adv_acc_req.data:
                 pr_id = i['ProjectID']
                 project = pr_table.search('ProjectID', pr_id)
                 if project and project['Advisor'] == '':
                     pr_table.search('ProjectID', pr_id)['Advisor'] = i['ReceiverID']
                 adv_pending_req = adv_req.filter(lambda x: x['ProjectID'] == pr_id)
-                if adv_pending_req:
+                if adv_pending_req and not all(i == '' for i in adv_pending_req.data[0]):
                     for j in adv_pending_req.data:
                         if j['Response'] == 'Pending':
                             j['Response'] = 'Expired'
@@ -79,23 +95,71 @@ class Session:
 
         mem_acc_req = mem_req.filter(lambda x: x['Response'] == 'Accepted')
 
-        if mem_acc_req:
+        if mem_acc_req and not all(i == '' for i in mem_acc_req.data[0]):
             for i in mem_acc_req.data:
                 pr_id = i['ProjectID']
                 project = pr_table.search('ProjectID', pr_id)
                 if project:
-                    if project and project['Member1'] == '':
+                    if project['Member1'] == '':
                         pr_table.search('ProjectID', pr_id)['Member1'] = i['ReceiverID']
-                    elif project and pr_table.search('ProjectID', pr_id)['Member2'] == '':
+                    elif project['Member2'] == '':
                         pr_table.search('ProjectID', pr_id)['Member2'] = i['ReceiverID']
                     mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id
-                                                               and x['Response'] == 'Pending')
-                    if mem_pending_req:
+                                                     and x['Response'] == 'Pending')
+                    if mem_pending_req and not all(i == '' for i in mem_pending_req.data[0]):
                         if project['Member1'] != '' and project['Member2'] != '':
                             for j in mem_pending_req.data:
                                 if j['Response'] == 'Pending':
                                     j['Response'] = 'Expired'
                                     j['Response_date'] = self.time_format()
+
+        rev_acc_req = mem_req.filter(lambda x: x['Response'] == 'Accepted')
+        if rev_acc_req and not all(i == '' for i in rev_acc_req.data[0]):
+            for i in mem_acc_req.data:
+                pr_id = i['ProjectID']
+                committee_dc = committee_tab.search('ProjectID', pr_id)
+                if committee_dc:
+                    if self.__check_role(i['ReceiverID']) in self.__faculty_role:
+                        if committee_dc['Reviewer1'] == '':
+                            committee_tab.search('ProjectID', pr_id)['Reviewer1'] = i['ReceiverID']
+                        elif committee_dc['Reviewer2'] == '':
+                            committee_tab.search('ProjectID', pr_id)['Reviewer2'] = i['ReceiverID']
+                        fac_pending = (rev_req.filter
+                                       (lambda x: x['ProjectID'] == pr_id
+                                        and self.__check_role(x['ReceiverID'] in self.__faculty_role)))
+                        if fac_pending and not all(i == '' for i in fac_pending.data[0]):
+                            if committee_dc['Reviewer1'] != '' and committee_tab['Reviewer2'] != '':
+                                for j in fac_pending.data:
+                                    if j['Response'] == 'Pending':
+                                        j['Response'] = 'Expired'
+                                        j['Response_date'] = self.time_format()
+
+                    elif self.__check_role(i['ReceiverID']) in self.__student_role:
+                        if committee_dc['Student1'] == '':
+                            committee_tab.search('ProjectID', pr_id)['Student1'] = i['ReceiverID']
+                        elif committee_dc['Student2'] == '':
+                            committee_tab.search('ProjectID', pr_id)['Student2'] = i['ReceiverID']
+                        elif committee_dc['Student3'] == '':
+                            committee_tab.search('ProjectID', pr_id)['Student3'] = i['ReceiverID']
+                        elif committee_dc['Student4'] == '':
+                            committee_tab.search('ProjectID', pr_id)['Student4'] = i['ReceiverID']
+                        elif committee_dc['Student5'] == '':
+                            committee_tab.search('ProjectID', pr_id)['Student5'] = i['ReceiverID']
+                        std_pending = (rev_req.filter
+                                       (lambda x: x['ProjectID'] == pr_id
+                                        and self.__check_role(x['ReceiverID'] in self.__student_role)))
+                        check_ls = ['Student1', 'Student2', 'Student3', 'Student4', 'Student5']
+                        if std_pending and not all(i == '' for i in std_pending.data[0]):
+                            if all(std_pending[i] != '' for i in check_ls):
+                                for j in std_pending.data:
+                                    if j['Response'] == 'Pending':
+                                        j['Response'] = 'Expired'
+                                        j['Response_date'] = self.time_format()
+
+
+
+
+
 
     ###############################################################################################
     # Admin Related Staff
@@ -377,7 +441,10 @@ class Session:
             return
         if response:
             request['Response'] = 'Accepted'
-            self.__update_role(uid, to_be)
+            if to_be != 'reviewer':
+                self.__update_role(uid, to_be)
+            else:
+                self.__update_role(uid, self.role + '/reviewer')
         else:
             request['Response'] = 'Denied'
         request['Response_date'] = self.time_format()
@@ -398,6 +465,8 @@ class Session:
             to_be = 'member'
         if table.table_name == "Advisor_pending_request":
             to_be = 'advisor'
+        if table.table_name == 'Pending_Reviewer_Request':
+            to_be = 'reviewer'
 
         # Chck if to_be role is correctly assign(Return if not)
         if to_be == '':
@@ -460,6 +529,8 @@ class Session:
     def advisor_evaluate(self, uid):
         if uid != self.__uid:
             raise PermissionError("User ID Not Match")
+        if 'advisor' not in self.role:
+            raise PermissionError("Your role has no permission")
         app_table = self.db.search("Pending_project_approval")
         if not app_table:
             raise LookupError("Table not found")
@@ -476,8 +547,12 @@ class Session:
         if all(i == '' for i in app_table.data[0].values()):
             print("Inbox Empty")
             return
+
+        project_detail = pr_table.search('ProjectID', app_table.data[0]['ProjectID'])
+        if not project_detail:
+            raise LookupError("Project Detail Error")
+
         for i in range(len(app_table.data)):
-            project_detail = pr_table.search('ProjectID', app_table.data[i]['ProjectID'])
             print(f'{i+1}. {project_detail["ProjectID"]} '
                   f'{project_detail["Project Title"]}'
                   f', Current Status: {project_detail["Status"]}')
@@ -514,6 +589,22 @@ class Session:
                 if status == 'Ongoing':
                     self.role += '/reviewer'
                     self.__update_role(uid, self.role)
+                    committee_dict = {'ProjectID': project_detail['ProjectID'],
+                                      'Advisor': uid,
+                                      'Reviewer1': '',
+                                      'Reviewer2': '',
+                                      'Student1': '',
+                                      'Student2': '',
+                                      'Student3': '',
+                                      'Student4': '',
+                                      'Student5': '',
+                                      'Status': 'Ongoing'}
+                    table = self.db.search('Project_Evaluate_Committee')
+
+                    if not table:
+                        raise LookupError("Project Evaluate Committee Table Not Found")
+
+                    table.insert(committee_dict)
                     return
 
                 # Return if project is completed(Should not be)
@@ -523,47 +614,130 @@ class Session:
                 return
             print('Invalid Input\n')
 
+    def request_reviewer(self, a_uid):
+        if a_uid != self.__uid:
+            raise PermissionError("User ID Not Match")
+        s_m = input('Search by Name or by ID \nSearch Mode: ')
+        s_q = input('Search Query: ')
+        uid = self.__search_for_id(s_m, s_q, 'faculty')
+        if uid == a_uid:
+            print("You Can't Invite Your Self")
+            return
+        if uid:
+            i_table = self.db.search('Pending_Reviewer_Request')
+            pr_table = self.db.search('Project')
+            if i_table and pr_table:
+                # Find Project ID and Project Lead by UID
+                project_dict = pr_table.search('Advisor', a_uid)
+                project_id = project_dict['ProjectID']
+                # Check if Duplicates
+                filtered_table = i_table.filter(lambda x: x['ProjectID'] == project_id)
+                filtered_table = filtered_table.filter(lambda x: x['ReceiverID'] == uid and x['Response'] == 'Pending')
+                if not all(i == '' for i in filtered_table.data[0].values()):
+                    print('You already sent to this person')
+                    return
+                i_table.insert({"ProjectID": project_id,
+                                "ReceiverID": uid,
+                                "Response": 'Pending',
+                                "Response_date": ''})
+            else:
+                raise LookupError("Table not found")
+        else:
+            print('No Receiver found')
 
+    def add_paper_score(self, uid):
+        if uid != self.uid:
+            raise PermissionError("User ID not Match")
+        cm_table = self.db.search('Project_Evaluate_Committee')
+        if not cm_table:
+            raise LookupError('Table Not Found')
+        sc_table = self.db.search('Project_Score_Result')
+        if not sc_table:
+            raise LookupError('Table Not Found')
+        committee_filtered = cm_table.filter(lambda x:
+                                             x['Advisor'] == uid or
+                                             x['Reviewer1'] == uid or
+                                             x['Reviewer2'] == uid or
+                                             x['Student1'] == uid or
+                                             x['Student2'] == uid or
+                                             x['Student3'] == uid or
+                                             x['Student4'] == uid or
+                                             x['Student5'] == uid)
+        if all(i == '' for i in committee_filtered.data[0]):
+            print('There are no Project Assign to You')
+            return
+        pid = committee_filtered.data[0]['ProjectID']
 
+        score_dict = sc_table.search('ProjectID', pid)
+        if not score_dict:
+            print('No Score Sheet Found')
+            return
+        # Get Role of the person in committee
+        role = ''
+        for i in committee_filtered.data[0]:
+            if committee_filtered.data[0][i] == uid:
+                role = i
+                break
 
+        if role.isspace():
+            print('user do not have a role in this project')
+            return
 
-class Scoring:
-    @staticmethod
-    def __is_int(x):
-        try:
-            int(x)
-            return True
-        except ValueError:
-            return False
-
-    def __init__(self, uid):
-        self.__uid = uid
-        self.__score = 0
-
-    @property
-    def uid(self):
-        return self.__uid
-
-    @property
-    def score(self):
-        return self.__score
-
-    def add_report_score(self):
         # Max of 10
         while True:
-            score = input('Enter Your Score: ')
+            score = input('Enter Your Score(Max of 10): ')
             if self.__is_int(score):
                 score = int(score)
                 if 0 <= score <= 10:
-                    self.__score += score
+                    if score_dict.get(role):
+                        score_dict[role] = score
                     break
 
-    def add_presentation_score(self):
-        # Max of 5
+    def add_present_score(self, uid):
+        if uid != self.uid:
+            raise PermissionError("User ID not Match")
+        cm_table = self.db.search('Project_Evaluate_Committee')
+        if not cm_table:
+            raise LookupError('Table Not Found')
+        sc_table = self.db.search('Project_Score_Result')
+        if not sc_table:
+            raise LookupError('Table Not Found')
+        committee_filtered = cm_table.filter(lambda x:
+                                             x['Advisor'] == uid or
+                                             x['Reviewer1'] == uid or
+                                             x['Reviewer2'] == uid or
+                                             x['Student1'] == uid or
+                                             x['Student2'] == uid or
+                                             x['Student3'] == uid or
+                                             x['Student4'] == uid or
+                                             x['Student5'] == uid)
+        if all(i == '' for i in committee_filtered.data[0]):
+            print('There are no Project Assign to You')
+            return
+        pid = committee_filtered.data[0]['ProjectID']
+
+        score_dict = sc_table.search('ProjectID', pid)
+        if not score_dict:
+            print('No Score Sheet Found')
+            return
+        # Get Role of the person in committee
+        role = ''
+        for i in committee_filtered.data[0]:
+            if committee_filtered.data[0][i] == uid:
+                role = i
+                break
+
+        if role.isspace():
+            print('user do not have a role in this project')
+            return
+
+        # Max of 10
         while True:
-            score = input('Enter Your Score: ')
+            score = input('Enter Your Score(Max of 10): ')
             if self.__is_int(score):
                 score = int(score)
                 if 0 <= score <= 5:
-                    self.__score += score
+                    if score_dict.get(role):
+                        score_dict[role] = score
                     break
+

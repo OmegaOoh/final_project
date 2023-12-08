@@ -40,21 +40,47 @@ def initializing():
                                                                             "Response_date": ''})
 
         main_db.insert(table)
-
     if 'Pending_project_approval' not in csv_ls:
         table = database.Table("Pending_project_approval", {'ProjectID': '',
                                                                               'Document': '',
                                                                               'Advisor': '',
                                                                               'Response': '',
                                                                               'Response_date': ''})
+        main_db.insert(table)
 
         main_db.insert(table)
     if "Pending_Reviewer_Request " not in csv_ls:
         table = database.Table("Pending_Reviewer_Request ", {'ProjectID': '',
-                                                                              'Reviewer': '',
+                                                                              'ReceiverID': '',
                                                                               'Response': '',
                                                                               'Response_date': ''})
+        main_db.insert(table)
 
+    if "Project_Evaluate_Committee " not in csv_ls:
+        table = database.Table("Project_Evaluate_Committee ", {'ProjectID': '',
+                                                                                 'Advisor': '',
+                                                                                 'Reviewer1': '',
+                                                                                 'Reviewer2': '',
+                                                                                 'Student1': '',
+                                                                                 'Student2': '',
+                                                                                 'Student3': '',
+                                                                                 'Student4': '',
+                                                                                 'Student5': '',
+                                                                                 'Status': ''})
+        main_db.insert(table)
+
+    if "Project_Score_Result " not in csv_ls:
+        table = database.Table("Project_Score_Result ", {'ProjectID': '',
+                                                                         'Advisor': '',
+                                                                         'Reviewer1': '',
+                                                                         'Reviewer2': '',
+                                                                         'Student1': '',
+                                                                         'Student2': '',
+                                                                         'Student3': '',
+                                                                         'Student4': '',
+                                                                         'Student5': '',
+                                                                         'Status': ''})
+        main_db.insert(table)
 
 
 
@@ -95,20 +121,33 @@ def update_function(params):
 
     if params[1] == 'student':
         # see and do student related activities
-        return {'Create Project':
-                    [session.create_project, [params[0]]],
-                'Show Invitation':
-                    [session.response_request_menu, [params[0],
-                     main_db.search('Member_pending_request')]],
-                'Exit': [exit, [None]]}
+        func_dict = {'Create Project':
+                        [session.create_project, [params[0]]],
+                    'Show Invitation':
+                        [session.response_request_menu, [params[0],
+                        main_db.search('Member_pending_request')]]}
+
+        if 'reviewer' in params[1]:
+            # TODO Add Function Name after implement it
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
+
+        func_dict['Exit'] = [exit, [None]]
+        return func_dict
     if params[1] == 'member':
         # see and do member related activities
-        return {'See Project Detail':
-                    [session.show_user_project, [params[0]]],
-                'Show Invitation':
-                    [session.response_request_menu, [params[0],
-                     main_db.search('Member_pending_request')]],
-                'Exit': [exit, [None]]}
+        func_dict = {'See Project Detail':
+                        [session.show_user_project, [params[0]]],
+                     'Show Invitation':
+                        [session.response_request_menu, [params[0],
+                        main_db.search('Member_pending_request')]]}
+        if 'reviewer' in params[1]:
+            # TODO Add Function Name after implement it
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
+
+        func_dict['Exit'] = [exit, [None]]
+        return func_dict
     if params[1] == 'lead':
         # see and do lead related activities
         pr_table = main_db.search('Project')
@@ -138,8 +177,7 @@ def update_function(params):
                      'Show Sent Advisor Request':
                          [session.read_as_table, [val[0], advisor_inv]],
                      'Submit':
-                         [session.submit, [params[0]]],
-                     'Exit': [exit, [None]]}
+                         [session.submit, [params[0]]]}
 
         # Remove Ability to Find and Send Member Invites
         if project['Member1'] != '' and project['Member2'] != '':
@@ -150,6 +188,13 @@ def update_function(params):
         if project['Advisor'] != '':
             func_dict.pop('Find Advisor')
             func_dict.pop('Request Advisor')
+
+        if 'reviewer' in params[1]:
+            # TODO Add Function Name after implement it
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
+
+        func_dict['Exit'] = [exit, [None]]
         return func_dict
 
     if params[1] == 'faculty':
@@ -162,12 +207,10 @@ def update_function(params):
                      }
         if 'reviewer' in params[1]:
             # TODO Add Function Name after implement it
-            func_dict['Add Paper Score'] = [session., [params[0]]]
-            func_dict['Add Presentation Score'] = [session., [params[0]]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
         func_dict['Exit'] = [exit,[None]]
         return func_dict
-
-
 
     if params[1] == 'advisor':
         # see and do advisor related activities
@@ -176,7 +219,7 @@ def update_function(params):
                          [session.response_request_menu, [params[0],
                           main_db.search('Advisor_pending_request')]],
                      'Evaluate':
-                         [session.evaluate, [params[0]]]}
+                         [session.advisor_evaluate, [params[0]]]}
         if 'reviewer' in params[1]:
             # TODO Add Function Name after implement it
             func_dict['Add Paper Score'] = [session., [params[0]]]
