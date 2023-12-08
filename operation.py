@@ -42,19 +42,14 @@ class Session:
         if 'r' not in ls:
             # Report Review Score acquired
             func_dict.pop('Add Paper Score')
-            r1 = True
         if 'p' not in ls:
             # Presentation Score acquire
             func_dict.pop('Add Presentation Score')
-
 
     @staticmethod
     def __check_review_status(result):
         ls = result.split(' + ')
         return 'r' not in ls and 'p' not in ls
-
-
-
             
     def __init__(self, uid, db: database.Database):
         self.db = db
@@ -67,7 +62,7 @@ class Session:
             raise LookupError("Table Not Found; Can't Validate Roles.")
         login_data = login_table.search("ID", uid)
         if not login_data:
-            print('UID: ',uid)
+            print('UID: ', uid)
             raise LookupError('No User ID Found')
         return login_data['role']
 
@@ -188,11 +183,17 @@ class Session:
         if not cmm_tab:
             raise LookupError('Table Not Found')
         for i in score_tab.data:
-            check_ls = ['Advisor','Reviewer1', 'Reviewer2',
+            check_ls = ['Advisor', 'Reviewer1', 'Reviewer2',
                         'Student1', 'Student2', 'Student3', 'Student4', 'Student5']
             if all(self.__check_review_status(i[j]) for j in check_ls):
                 i['Status'] = 'Completed'
-                cmm_tab.search('ProjectID', i['ProjectID'])['Status'] = 'Completed'
+                # Remove Reviewer from Role
+                proj_cmm = cmm_tab.search('ProjectID', i['ProjectID'])
+                proj_cmm['Status'] = 'Completed'
+                for j in check_ls:
+                    self.__update_role(proj_cmm[j],
+                                       self.__check_role(proj_cmm).removesuffix('/reviewer'))
+
                 # Summarize Score
                 sum_score = 0
                 # Faculty
@@ -226,11 +227,7 @@ class Session:
                     j['Response_date'] = self.time_format()
 
 
-
-
-
-
-    ###############################################################################################
+###############################################################################################
     # Admin Related Staff
 
     def read_all_db(self, uid):
@@ -317,9 +314,9 @@ class Session:
         else:
             raise LookupError('Table not found')
 
-    def __search_for_id(self, mode, query, type: str):
+    def __search_for_id(self, mode, query, p_type: str):
         p_table = self.db.search('persons')
-        p_table = p_table.filter(lambda x: x['type'] == type)
+        p_table = p_table.filter(lambda x: x['type'] == p_type)
         if not p_table:
             raise LookupError("Table not found")
         # Search mode 'Name' / 'ID'
@@ -333,6 +330,7 @@ class Session:
             dict_p = p_table.search('ID', query)
             if dict_p:
                 return query
+        return None
             # print('User not found')
 
     @property
@@ -539,6 +537,9 @@ class Session:
             to_be = 'advisor'
         if table.table_name == 'Pending_Reviewer_Request':
             to_be = 'reviewer'
+            if 'reviewer' in self.__check_role(self.__uid):
+                print('You Currently Assign to Another Project')
+                return
 
         # Chck if to_be role is correctly assign(Return if not)
         if to_be == '':
@@ -702,8 +703,14 @@ class Session:
         if a_uid != self.__uid:
             raise PermissionError("User ID Not Match")
         s_m = input('Search by Name or by ID \nSearch Mode: ')
+        while s_m not in ['ID', 'Name']:
+            print('Invalid Search Mode')
+            s_m = input('Search by Name or by ID \nSearch Mode: ')
         s_q = input('Search Query: ')
         uid = self.__search_for_id(s_m, s_q, 'faculty')
+        if not uid:
+            uid = self.__search_for_id(s_m, s_q, 'student')
+
         if uid == a_uid:
             print("You Can't Invite Your Self")
             return
@@ -719,6 +726,9 @@ class Session:
                 filtered_table = filtered_table.filter(lambda x: x['ReceiverID'] == uid and x['Response'] == 'Pending')
                 if not all(i == '' for i in filtered_table.data[0].values()):
                     print('You already sent to this person')
+                    return
+                if uid in [project_dict['Lead'], project_dict['Member1'], project_dict['Member2']]:
+                    print("Reviewer Can not be Member")
                     return
                 i_table.insert({"ProjectID": project_id,
                                 "ReceiverID": uid,
