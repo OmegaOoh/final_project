@@ -35,6 +35,26 @@ class Session:
         p_table = db.search('persons')
         if p_table:
             p_table.search('ID', uid)
+
+    @staticmethod
+    def update_review_status(result: str, func_dict):
+        ls = result.split(' + ')
+        if 'r' not in ls:
+            # Report Review Score acquired
+            func_dict.pop('Add Paper Score')
+            r1 = True
+        if 'p' not in ls:
+            # Presentation Score acquire
+            func_dict.pop('Add Presentation Score')
+
+
+    @staticmethod
+    def __check_review_status(result):
+        ls = result.split(' + ')
+        return 'r' not in ls and 'p' not in ls
+
+
+
             
     def __init__(self, uid, db: database.Database):
         self.db = db
@@ -155,6 +175,51 @@ class Session:
                                     if j['Response'] == 'Pending':
                                         j['Response'] = 'Expired'
                                         j['Response_date'] = self.time_format()
+
+    def __check_score(self):
+        score_tab = self.db.search('Project_Score_Result')
+        if not score_tab:
+            raise LookupError('Table Not Found')
+        cmm_tab = self.db.search('Project_Evaluate_Committee')
+        if not cmm_tab:
+            raise LookupError('Table Not Found')
+        for i in score_tab.data:
+            check_ls = ['Advisor','Reviewer1', 'Reviewer2',
+                        'Student1', 'Student2', 'Student3', 'Student4', 'Student5']
+            if all(self.__check_review_status(i[j]) for j in check_ls):
+                i['Status'] = 'Completed'
+                cmm_tab.search('ProjectID', i['ProjectID'])['Status'] = 'Completed'
+                # Summarize Score
+                sum_score = 0
+                # Faculty
+                for j in check_ls[0:3]:
+                    ls = i[j].split(' + ')
+                    for k in ls:
+                        sum_score += k * 2
+
+                # Student
+                for j in check_ls[0:3]:
+                    ls = i[j].split(' + ')
+                    for k in ls:
+                        sum_score += k / 8
+
+                if sum_score > 100:
+                    sum_score = 100
+
+                project_app = self.db.search("Pending_project_approval")
+                if not project_app:
+                    raise LookupError("Table Not Found")
+                project_app = project_app.filter(lambda x: x['Response_date'] == '')
+                for j in project_app.search('ProjectID', i['ProjectID']):
+                    if sum_score >= 50:
+                        j['Response'] = 'Approved'
+                        project = self.db.search('Project')
+                        if project:
+                            p = project.search("ProjectID", i['ProjectID'])
+                            p['Status'] = 'Completed'
+                    else:
+                        j['Response'] = 'Denied'
+                    j['Response_date'] = self.time_format()
 
 
 
@@ -600,11 +665,20 @@ class Session:
                                       'Student5': '',
                                       'Status': 'Ongoing'}
                     table = self.db.search('Project_Evaluate_Committee')
-
                     if not table:
                         raise LookupError("Project Evaluate Committee Table Not Found")
-
                     table.insert(committee_dict)
+                    score_dict = {{'ProjectID': project_detail['ProjectID'],
+                                   'Advisor': 'r + p',
+                                   'Reviewer1': 'r + p',
+                                   'Reviewer2': 'r + p',
+                                   'Student1': 'r + p',
+                                   'Student2': 'r + p',
+                                   'Student3': 'r + p',
+                                   'Student4': 'r + p',
+                                   'Student5': 'r + p',
+                                   'Status': 'Ongoing'}}
+                    table = self.db.search('Project_Score_Result')
                     return
 
                 # Return if project is completed(Should not be)
@@ -645,8 +719,8 @@ class Session:
         else:
             print('No Receiver found')
 
-    def add_paper_score(self, uid):
-        if uid != self.uid:
+    def add_paper_score(self, uid, func_dict):
+        if uid != self.__uid:
             raise PermissionError("User ID not Match")
         cm_table = self.db.search('Project_Evaluate_Committee')
         if not cm_table:
@@ -686,15 +760,17 @@ class Session:
         # Max of 10
         while True:
             score = input('Enter Your Score(Max of 10): ')
-            if self.__is_int(score):
-                score = int(score)
-                if 0 <= score <= 10:
-                    if score_dict.get(role):
-                        score_dict[role] = score
-                    break
+            if not self.__is_int(score):
+                score = '-1'
+            if 0 <= int(score) <= 10:
+                score_dict[role] = score + score_dict[role].removeprefix('p')
+                break
+        self.update_review_status(score_dict[role], func_dict)
+        self.__check_score()
 
-    def add_present_score(self, uid):
-        if uid != self.uid:
+
+    def add_present_score(self, uid, func_dict):
+        if uid != self.__uid:
             raise PermissionError("User ID not Match")
         cm_table = self.db.search('Project_Evaluate_Committee')
         if not cm_table:
@@ -731,13 +807,14 @@ class Session:
             print('user do not have a role in this project')
             return
 
-        # Max of 10
+        # Max of 5
         while True:
-            score = input('Enter Your Score(Max of 10): ')
-            if self.__is_int(score):
-                score = int(score)
-                if 0 <= score <= 5:
-                    if score_dict.get(role):
-                        score_dict[role] = score
-                    break
-
+            score = input('Enter Your Score(Max of 5): ')
+            if not self.__is_int(score):
+                score = '-1'
+            if 0 <= int(score) <= 5 :
+                score_dict[role] = score_dict[role].removesuffix('p') + score
+                break
+        self.update_review_status(score_dict[role], func_dict)
+        self.__check_score()
+        

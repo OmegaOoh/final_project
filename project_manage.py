@@ -129,8 +129,8 @@ def update_function(params):
 
         if 'reviewer' in params[1]:
             # TODO Add Function Name after implement it
-            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
-            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0],func_dict]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0],func_dict]]
 
         func_dict['Exit'] = [exit, [None]]
         return func_dict
@@ -143,8 +143,8 @@ def update_function(params):
                         main_db.search('Member_pending_request')]]}
         if 'reviewer' in params[1]:
             # TODO Add Function Name after implement it
-            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
-            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0],func_dict]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0],func_dict]]
 
         func_dict['Exit'] = [exit, [None]]
         return func_dict
@@ -190,9 +190,8 @@ def update_function(params):
             func_dict.pop('Request Advisor')
 
         if 'reviewer' in params[1]:
-            # TODO Add Function Name after implement it
-            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
-            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0],func_dict]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0],func_dict]]
 
         func_dict['Exit'] = [exit, [None]]
         return func_dict
@@ -206,9 +205,8 @@ def update_function(params):
                      main_db.search('Advisor_pending_request')]]
                      }
         if 'reviewer' in params[1]:
-            # TODO Add Function Name after implement it
-            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
-            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0],func_dict]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0],func_dict]]
         func_dict['Exit'] = [exit,[None]]
         return func_dict
 
@@ -222,8 +220,8 @@ def update_function(params):
                          [session.advisor_evaluate, [params[0]]]}
         if 'reviewer' in params[1]:
             # TODO Add Function Name after implement it
-            func_dict['Add Paper Score'] = [session., [params[0]]]
-            func_dict['Add Presentation Score'] = [session., [params[0]]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0],func_dict]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0],func_dict]]
             func_dict['Presentation Appointment'] = [session.,[params[0]]]
         func_dict['Exit'] = [exit, [None]]
         return func_dict
@@ -236,6 +234,40 @@ def menu():
         table = main_db.search('login')
         r = table.search('ID', userid)
         func_dict = update_function([userid, r['role']])
+        # Handle Reviewed content
+        if 'reviewer' in r['role'][1]:
+            cm_table = main_db.search('Project_Evaluate_Committee')
+            if not cm_table:
+                raise LookupError('Table Not Found')
+            sc_table = main_db.search('Project_Score_Result')
+            if not sc_table:
+                raise LookupError('Table Not Found')
+            committee_filtered = cm_table.filter(lambda x:
+                                                 x['Advisor'] == userid or
+                                                 x['Reviewer1'] == userid or
+                                                 x['Reviewer2'] == userid or
+                                                 x['Student1'] == userid or
+                                                 x['Student2'] == userid or
+                                                 x['Student3'] == userid or
+                                                 x['Student4'] == userid or
+                                                 x['Student5'] == userid)
+
+            pid = committee_filtered.data[0]['ProjectID']
+
+            score_dict = sc_table.search('ProjectID', pid)
+            if not score_dict:
+                print('No Score Sheet Found')
+                return
+            # Get Role of the person in committee
+            role = ''
+            if committee_filtered:
+                for i in committee_filtered.data[0]:
+                    if committee_filtered.data[0][i] == userid:
+                        role = i
+                        break
+            if not role.isspace():
+                session.update_review_status(score_dict[role], func_dict)
+
         print(f"Login as {userid}. Role: {r['role']}")
         select_dict = {}
         for i in range((len(list(func_dict.keys())))):
@@ -272,6 +304,7 @@ userid = val[0]
 session = Session(val[0], main_db)
 if not val:
     raise LookupError()
+
 
 
 # Open Menu
