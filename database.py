@@ -41,11 +41,11 @@ class Table:
     def __init__(self, table_name: str, data: list or dict):
         self.__table_name = table_name
         if isinstance(data, dict):
-            self.key = [i for i in data.keys()]
+            self.key = list(data.keys())
             self.__data = [data]
         elif isinstance(data, list):
             self.__data = data
-            self.key = [i for i in self.__data[0].keys()]
+            self.key = list(data[0].keys())
 
     @property
     def table_name(self):

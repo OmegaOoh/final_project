@@ -690,6 +690,9 @@ class Session:
                                    'Student5': 'r + p',
                                    'Status': 'Ongoing'}
                     table = self.db.search('Project_Score_Result')
+                    if not table:
+                        raise LookupError("Score Table Not Found")
+                    table.insert(score_dict)
                     return
 
                 # Return if project is completed(Should not be)
@@ -707,6 +710,8 @@ class Session:
             print('Invalid Search Mode')
             s_m = input('Search by Name or by ID \nSearch Mode: ')
         s_q = input('Search Query: ')
+
+        # Finding Requested User Uid
         uid = self.__search_for_id(s_m, s_q, 'faculty')
         if not uid:
             uid = self.__search_for_id(s_m, s_q, 'student')
