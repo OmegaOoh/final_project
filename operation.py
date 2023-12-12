@@ -6,7 +6,8 @@ from database import Table
 # Handle Common Methods
 class Session:
     __valid_role = ['student', 'member', 'lead',
-                    'faculty', 'advisor','admin',
+                    'student/reviewer', 'member/reviewer', 'lead/reviewer',
+                    'faculty', 'advisor', 'admin',
                     'faculty/reviewer', 'advisor/reviewer']
     __faculty_role = ['faculty', 'advisor',
                       'faculty/reviewer', 'advisor/reviewer']
@@ -95,33 +96,38 @@ class Session:
         if not score_tab:
             raise LookupError("Score Sheet Not Found")
 
+        # Update Project Advisor
         adv_acc_req = adv_req.filter(lambda x: x['Response'] == 'Accepted')
         if adv_acc_req and not all(i == '' for i in adv_acc_req.data[0]):
             for i in adv_acc_req.data:
                 pr_id = i['ProjectID']
                 project = pr_table.search('ProjectID', pr_id)
+                # Check if Any slot is empty and assign newly accept in
                 if project and project['Advisor'] == '':
                     pr_table.search('ProjectID', pr_id)['Advisor'] = i['ReceiverID']
                 adv_pending_req = adv_req.filter(lambda x: x['ProjectID'] == pr_id)
+                # if all slot is occupied then change status to Expired
                 if adv_pending_req and not all(i == '' for i in adv_pending_req.data[0]):
                     for j in adv_pending_req.data:
                         if j['Response'] == 'Pending':
                             j['Response'] = 'Expired'
                             j['Response_date'] = self.time_format()
 
+        # Update Project Member
         mem_acc_req = mem_req.filter(lambda x: x['Response'] == 'Accepted')
-
         if mem_acc_req and not all(i == '' for i in mem_acc_req.data[0]):
             for i in mem_acc_req.data:
                 pr_id = i['ProjectID']
                 project = pr_table.search('ProjectID', pr_id)
                 if project:
+                    # Check if Any slot is empty and assign newly accept in
                     if project['Member1'] == '':
                         pr_table.search('ProjectID', pr_id)['Member1'] = i['ReceiverID']
                     elif project['Member2'] == '':
                         pr_table.search('ProjectID', pr_id)['Member2'] = i['ReceiverID']
                     mem_pending_req = mem_req.filter(lambda x: x['ProjectID'] == pr_id
                                                      and x['Response'] == 'Pending')
+                    # if all slot is occupied then change status to Expired
                     if mem_pending_req and not all(i == '' for i in mem_pending_req.data[0]):
                         if project['Member1'] != '' and project['Member2'] != '':
                             for j in mem_pending_req.data:
@@ -129,7 +135,8 @@ class Session:
                                     j['Response'] = 'Expired'
                                     j['Response_date'] = self.time_format()
 
-        rev_acc_req = mem_req.filter(lambda x: x['Response'] == 'Accepted')
+        # Update Project Reviewer
+        rev_acc_req = rev_req.filter(lambda x: x['Response'] == 'Accepted')
         if rev_acc_req and not all(i == '' for i in rev_acc_req.data[0]):
             for i in rev_acc_req.data:
                 if i['ReceiverID'] == '':
@@ -137,7 +144,9 @@ class Session:
                 pr_id = i['ProjectID']
                 uid = i['ReceiverID']
                 committee_dc = committee_tab.search('ProjectID', pr_id)
+                # Assign To Committee Table
                 if committee_dc:
+                    # Check if Any slot is empty and assign newly accept in
                     if self.__check_role(uid) in self.__faculty_role:
                         if committee_dc['Reviewer1'] == '':
                             committee_tab.search('ProjectID', pr_id)['Reviewer1'] = i['ReceiverID']
@@ -152,7 +161,7 @@ class Session:
                                     if j['Response'] == 'Pending':
                                         j['Response'] = 'Expired'
                                         j['Response_date'] = self.time_format()
-
+                    # Check if Any slot is empty and assign newly accept in
                     elif self.__check_role(i['ReceiverID']) in self.__student_role:
                         if committee_dc['Student1'] == '':
                             committee_tab.search('ProjectID', pr_id)['Student1'] = i['ReceiverID']
@@ -164,12 +173,11 @@ class Session:
                             committee_tab.search('ProjectID', pr_id)['Student4'] = i['ReceiverID']
                         elif committee_dc['Student5'] == '':
                             committee_tab.search('ProjectID', pr_id)['Student5'] = i['ReceiverID']
-                        std_pending = (rev_req.filter
-                                       (lambda x: x['ProjectID'] == pr_id
-                                        and self.__check_role(x['ReceiverID'] in self.__student_role)))
+                        std_pending = rev_req.filter(lambda x: x['ProjectID'] == pr_id)
                         check_ls = ['Student1', 'Student2', 'Student3', 'Student4', 'Student5']
+                        # if all slot is occupied then change status to Expired
                         if std_pending and not all(i == '' for i in std_pending.data[0]):
-                            if all(std_pending[i] != '' for i in check_ls):
+                            if all(std_pending.data[0] != '' for i in check_ls):
                                 for j in std_pending.data:
                                     if j['Response'] == 'Pending':
                                         j['Response'] = 'Expired'
@@ -619,7 +627,6 @@ class Session:
         print("Pending Approval Request")
         if all(i == '' for i in app_table.data[0].values()):
             print("Inbox Empty")
-            print(app_table)
             return
 
         project_detail = pr_table.search('ProjectID', app_table.data[0]['ProjectID'])
@@ -753,6 +760,7 @@ class Session:
         sc_table = self.db.search('Project_Score_Result')
         if not sc_table:
             raise LookupError('Table Not Found')
+        print(cm_table)
         committee_filtered = cm_table.filter(lambda x:
                                              x['Advisor'] == uid or
                                              x['Reviewer1'] == uid or
@@ -762,11 +770,12 @@ class Session:
                                              x['Student3'] == uid or
                                              x['Student4'] == uid or
                                              x['Student5'] == uid)
+        print(committee_filtered)
         if all(i == '' for i in committee_filtered.data[0]):
             print('There are no Project Assign to You')
             return
         pid = committee_filtered.data[0]['ProjectID']
-
+        print(pid)
         score_dict = sc_table.search('ProjectID', pid)
         if not score_dict:
             print('No Score Sheet Found')
@@ -782,13 +791,16 @@ class Session:
             print('user do not have a role in this project')
             return
 
+        if score_dict[role][0] != 'r':
+            print('You has been review this project')
+            return
         # Max of 10
         while True:
             score = input('Enter Your Score(Max of 10): ')
             if not self.__is_int(score):
                 score = '-1'
             if 0 <= int(score) <= 10:
-                score_dict[role] = score + score_dict[role].removeprefix('p')
+                score_dict[role] = score + score_dict[role].removeprefix('r')
                 break
         self.update_review_status(score_dict[role], func_dict)
         self.__check_score()
@@ -830,7 +842,9 @@ class Session:
         if role.isspace():
             print('user do not have a role in this project')
             return
-
+        if score_dict[role][-1] != 'p':
+            print('You has been review this project')
+            return
         # Max of 5
         while True:
             score = input('Enter Your Score(Max of 5): ')

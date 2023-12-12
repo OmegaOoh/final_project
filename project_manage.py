@@ -1,3 +1,4 @@
+import copy
 import os
 import database
 from operation import Session
@@ -123,9 +124,13 @@ def update_function(params):
                          [session.create_project, [params[0]]],
                      'Show Invitation':
                          [session.response_request_menu, [params[0],
-                                                          main_db.search('Member_pending_request')]]}
-
+                                                          main_db.search('Member_pending_request')]],
+                     'Show Review Request':
+                         [session.response_request_menu, [params[0],
+                                                          main_db.search('Pending_Reviewer_Request')]]}
+        # Add Reviewer Ability
         if 'reviewer' in params[1]:
+            func_dict.pop('Show Review Request')
             func_dict['Add Paper Score'] = [session.add_paper_score, [params[0], func_dict]]
             func_dict['Add Presentation Score'] = [session.add_present_score, [params[0], func_dict]]
 
@@ -137,8 +142,13 @@ def update_function(params):
                          [session.show_user_project, [params[0]]],
                      'Show Invitation':
                          [session.response_request_menu, [params[0],
-                                                          main_db.search('Member_pending_request')]]}
+                                                          main_db.search('Member_pending_request')]],
+                     'Show Review Request':
+                         [session.response_request_menu, [params[0],
+                                                          main_db.search('Pending_Reviewer_Request')]]
+                     }
         if 'reviewer' in params[1]:
+            func_dict.pop('Show Review Request')
             func_dict['Add Paper Score'] = [session.add_paper_score, [params[0], func_dict]]
             func_dict['Add Presentation Score'] = [session.add_present_score, [params[0], func_dict]]
 
@@ -168,6 +178,9 @@ def update_function(params):
                      'Show Invitation':
                          [session.response_request_menu, [params[0],
                                                           main_db.search('Member_pending_request')]],
+                     'Show Review Request':
+                         [session.response_request_menu, [params[0],
+                                                          main_db.search('Pending_Reviewer_Request')]],
                      'Show Sent Member Invitation':
                          [session.read_as_table, [val[0], member_inv]],
                      'Show Sent Advisor Request':
@@ -185,7 +198,9 @@ def update_function(params):
             func_dict.pop('Find Advisor')
             func_dict.pop('Request Advisor')
 
+        # Add Reviewer Ability
         if 'reviewer' in params[1]:
+            func_dict.pop('Show Review Request')
             func_dict['Add Paper Score'] = [session.add_paper_score, [params[0], func_dict]]
             func_dict['Add Presentation Score'] = [session.add_present_score, [params[0], func_dict]]
 
@@ -200,6 +215,7 @@ def update_function(params):
                          [session.response_request_menu, [params[0],
                                                           main_db.search('Advisor_pending_request')]]
                      }
+        # Add Reviewer Ability
         if 'reviewer' in params[1]:
             func_dict['Add Paper Score'] = [session.add_paper_score, [params[0], func_dict]]
             func_dict['Add Presentation Score'] = [session.add_present_score, [params[0], func_dict]]
@@ -223,6 +239,8 @@ def update_function(params):
             b_student = all(committee[i] != '' for i in ['Student1', 'Student2', 'Student3', 'Student4', 'Student5'])
             if not b_student or not b_faculty:
                 table = main_db.search('persons')
+                table = table.filter(lambda x: x['type'] != 'admin')
+                table.table_name = 'Reviewer'
                 if table:
                     if not b_faculty and b_student:
                         table.filter(lambda x: x['type'] == 'faculty')
@@ -287,7 +305,6 @@ def menu():
             print(f'{i + 1}. {list(func_dict.keys())[i]}')
             select_dict[str(i + 1)] = list(func_dict.keys())[i]
         while True:
-
             c = input('Enter Choice: ')
             if c in select_dict:
                 func_key = select_dict[c]
