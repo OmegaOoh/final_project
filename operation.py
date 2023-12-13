@@ -17,6 +17,10 @@ class Session:
 
     @staticmethod
     def time_format():
+        '''
+        This function Format date from time module into readable form
+        :return: string of formatted date
+        '''
         curr_time = time.localtime()
         formatted_time = (str(curr_time.tm_mon)
                           + '/' + str(curr_time.tm_mday)
@@ -25,6 +29,11 @@ class Session:
     
     @staticmethod
     def __is_int(x):
+        '''
+        This function check if x is an integer
+        :param x: data to be checked for
+        :return: result of check if x is an integer
+        '''
         try:
             int(x)
             return True
@@ -32,23 +41,12 @@ class Session:
             return False
 
     @staticmethod
-    def get_name(db: database.Database, uid):
-        p_table = db.search('persons')
-        if p_table:
-            p_table.search('ID', uid)
-
-    @staticmethod
-    def update_review_status(result: str, func_dict):
-        ls = result.split(' + ')
-        if 'r' not in ls:
-            # Report Review Score acquired
-            func_dict.pop('Add Paper Score')
-        if 'p' not in ls:
-            # Presentation Score acquire
-            func_dict.pop('Add Presentation Score')
-
-    @staticmethod
     def __check_review_status(result):
+        '''
+        This function Check if score is acquired
+        :param result: score to check
+        :return: True if score is acquired.Otherwise, False
+        '''
         ls = result.split(' + ')
         return 'r' not in ls and 'p' not in ls
             
@@ -58,6 +56,11 @@ class Session:
         self.role = self.__check_role(uid)
 
     def __check_role(self, uid):
+        '''
+        This function check role of person in login table
+        :param uid: uid of person to check
+        :return: person's role
+        '''
         login_table = self.db.search('login')
         if not login_table:
             raise LookupError("Table Not Found; Can't Validate Roles.")
@@ -68,6 +71,12 @@ class Session:
         return login_data['role']
 
     def __update_role(self, uid, new_role):
+        '''
+        This function Update role of person in login table and in Session
+        :param uid: uid of person to update
+        :param new_role: role to change to
+        :return: None
+        '''
         if new_role in self.__valid_role:
             table = self.db.search('login')
             if table:
@@ -78,6 +87,10 @@ class Session:
                 self.role = new_role
 
     def __update_project(self):
+        '''
+        This function Update Project in all Related Table
+        :return: None
+        '''
         pr_table = self.db.search('Project')
         if not pr_table:
             raise LookupError("Project Table not Found")
@@ -203,6 +216,10 @@ class Session:
                                         j['Response_date'] = self.time_format()
 
     def __check_score(self):
+        '''
+        This method is used to Summarize score and update its status accordingly
+        :return: None
+        '''
         score_tab = self.db.search('Project_Score_Result')
         if not score_tab:
             raise LookupError('Table Not Found')
@@ -255,6 +272,13 @@ class Session:
                 j['Response_date'] = self.time_format()
 
     def __complete_project(self, project_id):
+        '''
+        Set User in The project back to normal
+        For Lead and Member Change back to Student
+        For Advisor Change back to Faculty unless They still have project to supervising
+        :param project_id: Project ID
+        :return: None
+        '''
         p_table = self.db.search("Project")
         if not p_table:
             raise LookupError("Table Not Found")
@@ -282,6 +306,11 @@ class Session:
 ###############################################################################################
     # Admin Related Staff
     def read_all_db(self, uid):
+        '''
+        Read Every thing in the Database
+        :param uid: UserID
+        :return: None
+        '''
         if uid != self.__uid or self.__role != 'admin':
             raise PermissionError()
         for i in range(len(self.db.table_name())):
@@ -289,6 +318,14 @@ class Session:
             print()
 
     def __remove_by_data(self,uid, table_name, key, value):
+        '''
+        Remove the Data from the Table in Database by Value
+        :param uid: UserID
+        :param table_name: Table name
+        :param key: Key to remove
+        :param value: Value to remove
+        :return: None
+        '''
         if uid != self.__uid or self.__role != 'admin':
             raise PermissionError()
         target_table = self.db.search(table_name)
@@ -300,6 +337,13 @@ class Session:
         self.__remove_element(uid, target_table, index)
 
     def __remove_by_order(self, uid, table_name, order):
+        '''
+        Remove the Data from the Table in Database by Order
+        :param uid: UserID
+        :param table_name: Table Name
+        :param order: Order of The Data to be Remove
+        :return: None
+        '''
         if uid != self.__uid or self.__role != 'admin':
             raise PermissionError()
         target_table = self.db.search(table_name)
@@ -309,6 +353,16 @@ class Session:
         self.__remove_element(uid, target_table, order - 1)
 
     def __modify_data(self, uid, table_name, key_search, val_search, key_mod, val_mod):
+        '''
+        Modify the Data in The Table in Database
+        :param uid: UserID
+        :param table_name: Table Name
+        :param key_search: Key To Search for data to modify
+        :param val_search: Value to Modify
+        :param key_mod: Key to Modify
+        :param val_mod: New Value
+        :return: None
+        '''
         if uid != self.__uid or self.__role != 'admin' or key_mod == 'ID':
             raise PermissionError()
         target_table = self.db.search(table_name)
@@ -323,11 +377,24 @@ class Session:
             dc[key_mod] = val_mod
 
     def __remove_element(self, uid, table, index):
+        '''
+        Remove the Element from Table
+        :param uid: UserID
+        :param table: Target Table
+        :param index: Index to be remove
+        :return: None
+        '''
         if uid != self.__uid or self.__role != 'admin':
             raise PermissionError()
         table.remove_data(index)
 
     def remove_data(self, uid):
+        '''
+        This Method let Admin remove The Data from Table
+        All Necessary Information to remove take in the method
+        :param uid: UserID
+        :return: None
+        '''
         table_name = input('Target Table: ')
         mode = input('Remove mode (Data or Order) \nChoice: ')
         if mode == 'Data':
@@ -342,6 +409,12 @@ class Session:
                 return print('Invalid input...')
 
     def modify(self, uid):
+        '''
+        This Method Take Input for Modify
+        No Validation is needed because The Method will be Stop if Something was off.
+        :param uid: UserID
+        :return: None
+        '''
         tab_name = input('Table Name: ')
         key_s = input('Key to Search: ')
         val_s = input('Searching Value: ')
@@ -351,11 +424,24 @@ class Session:
 
     ###############################################################################################
     def read_as_table(self, uid, table):
+        '''
+        This Method Print Table Data in the Table Form
+        :param uid: UserID
+        :param table: Table to Print
+        :return:
+        '''
         if uid != self.__uid:
             raise PermissionError()
         print(table.to_table())
 
     def read_filtered_person(self, uid, key, val):
+        '''
+        Read Filtered Person Data by Key and Value
+        :param uid: UserID
+        :param key: Key to Filter
+        :param val: Value to Filter
+        :return: None
+        '''
         if uid != self.__uid:
             raise PermissionError()
         project = self.db.search('persons')
@@ -366,6 +452,13 @@ class Session:
             raise LookupError('Table not found')
 
     def __search_for_id(self, mode, query, p_type: str):
+        '''
+        This Method Search For Person ID
+        :param mode: Name or ID
+        :param query: Searching Query corresponding to Mode
+        :param p_type: Person Type
+        :return: User ID if it is found, else None
+        '''
         p_table = self.db.search('persons')
         p_table = p_table.filter(lambda x: x['type'] == p_type)
         if not p_table:
@@ -394,6 +487,13 @@ class Session:
             ValueError('INVALID ROLE')
 
     def create_project(self, uid):
+        '''
+        This Method Create Project by
+        Taking Project Title and Generate Project ID and
+        Assign User to Lead
+        :param uid: UserID
+        :return: None
+        '''
         if self.__uid != uid:
             raise PermissionError("User ID Not Match")
         table = self.db.search('Project')
@@ -423,6 +523,15 @@ class Session:
     # ProjectID generation is Subject to be change
     @staticmethod
     def __gen_project_id(project_title):
+        '''
+        Generate project ID
+        first 2 digit is Year
+        3-7 digit is time in nanosecond
+        8th digit is len of project_title mod 10
+        9th and 10th digit is usm of all number in the ID before mod 100
+        :param project_title:
+        :return:
+        '''
         uniqueid = str(time.gmtime().tm_year)[-2:]
         uniqueid += str(time.time_ns())[-8:-3]
         uniqueid += str(len(project_title) % 10)
@@ -430,6 +539,11 @@ class Session:
         return uniqueid
 
     def modify_project_detail(self, uid):
+        '''
+        Modify Project Detail
+        :param uid:
+        :return:
+        '''
         if self.__uid != uid:
             raise PermissionError("User ID Not Match")
         table = self.db.search('Project')
@@ -440,6 +554,11 @@ class Session:
             raise LookupError("Table not found")
 
     def __project_modify_menu(self, project):
+        '''
+        Printout and Use as Menu to Modify the project detail
+        :param project: Project Dict
+        :return: None
+        '''
         while True:
             print('Project Modification Menu:')
             print('1. Change Project Title')
@@ -473,6 +592,11 @@ class Session:
                 break
 
     def show_user_project(self, uid):
+        '''
+        Function to Show User Project Details
+        :param uid: UserID
+        :return: None
+        '''
         if uid != self.__uid:
             raise PermissionError()
         project = self.db.search('Project')
@@ -484,6 +608,11 @@ class Session:
             raise LookupError('Table not found')
 
     def send_invites(self, l_uid):
+        '''
+        Function to Send invites
+        :param l_uid: UserID of Lead
+        :return: None
+        '''
         if l_uid != self.__uid:
             raise PermissionError("User ID Not Match")
         s_m = input('Search by Name or by ID \nSearch Mode: ')
@@ -524,6 +653,11 @@ class Session:
             print('No Receiver found')
 
     def request_advisor(self, l_uid):
+        '''
+        This function Handle Advisor Request
+        :param l_uid: Lead UserID
+        :return: None
+        '''
         if l_uid != self.__uid:
             raise PermissionError("User ID Not Match")
         s_m = input('Search by Name or by ID \nSearch Mode: ')
@@ -558,6 +692,14 @@ class Session:
             print('No Receiver found')
 
     def __accept_deny_request(self, request, response: bool, uid, to_be):
+        '''
+        The Method Take the response and change user role according to their response
+        :param request: Request to Response
+        :param response: User Response
+        :param uid: UserID
+        :param to_be: Role to Change TO
+        :return: None
+        '''
         if request['Response'] != 'Pending' and request['Response_date'] != '':
             print('Request Already Response')
             return
@@ -573,6 +715,13 @@ class Session:
         self.__update_project()
 
     def response_request_menu(self, uid, table):
+        '''
+        The Method to display the request menu
+        and give user an ability to response it
+        :param uid: UserID
+        :param table: Requst Table to Response
+        :return: None
+        '''
         if uid != self.__uid:
             raise PermissionError()
         if not isinstance(table, Table):
@@ -857,7 +1006,6 @@ class Session:
             if 0 <= int(score) <= 10:
                 score_dict[role] = score + score_dict[role].removeprefix('r')
                 break
-        self.update_review_status(score_dict[role], func_dict)
         self.__check_score()
 
     def add_present_score(self, uid, func_dict):
@@ -908,5 +1056,4 @@ class Session:
             if 0 <= int(score) <= 5 :
                 score_dict[role] = score_dict[role].removesuffix('p') + score
                 break
-        self.update_review_status(score_dict[role], func_dict)
         self.__check_score()

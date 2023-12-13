@@ -5,6 +5,11 @@ __location__ = os.path.realpath(
 
 
 def read_csv(file_name: str):
+    '''
+    Function to Read Csv file and return as List
+    :param file_name: Csv file name
+    :return: list of dict
+    '''
     ls = []
     with open(os.path.join(__location__, file_name)) as f:
         rows = csv.DictReader(f)
@@ -19,15 +24,29 @@ class Database:
         self.__tables = []
 
     def insert(self, table: "Table Class"):
+        '''
+        Insert Table into database
+        :param table: Table Object
+        :return: None
+        '''
         self.__tables.append(table)
 
     def search(self, table_name: str):
+        '''
+        Function to Search database for specific table
+        :param table_name: Name of table to search
+        :return: Table (None if Not found)
+        '''
         for i in self.__tables:
             if i.table_name == table_name:
                 return i
         return None
 
     def table_name(self):
+        '''
+        Function to return name of all the table in database
+        :return: list of table names
+        '''
         return [i.table_name for i in self.__tables]
 
     def __str__(self):
@@ -63,12 +82,22 @@ class Table:
         return self.__data
 
     def __validate_new_data(self, x):
+        '''
+        Function to Validate input data
+        :param x: input data
+        :return: result of validation
+        '''
         if [i for i in x.keys()] == self.key:
             return True
         else:
             return False
 
     def insert(self, x):
+        '''
+        Function to insert new data to the Table
+        :param x: New Data
+        :return: Operation Status
+        '''
         if self.__validate_new_data(x):
             if all(i == '' for i in self.__data[0].values()):
                 self.data.clear()
@@ -78,12 +107,22 @@ class Table:
             return False
 
     def search(self, key, search_query):
+        '''
+        Function to Search of specific data in the Table
+        :param key: Key to Search
+        :param search_query: Data to find
+        :return: dict (None if not found)
+        '''
         for i in self.__data:
             if i[key] == search_query:
                 return i
         return None
 
     def write_to_csv(self):
+        '''
+        Function to Write table to csv file
+        :return: None
+        '''
         with open(self.table_name + '.csv', 'w', encoding='UTF8', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(self.key)
@@ -91,9 +130,19 @@ class Table:
                 writer.writerow(i.values())
 
     def select(self, key):
+        '''
+        Function to Select specific key in the table
+        :param key: key to be selected
+        :return: list of data
+        '''
         return [i[key] for i in self.data]
 
     def filter(self, condition):
+        '''
+        Function to filter data in the table
+        :param condition: function to filter data
+        :return: Filtered Table
+        '''
         data = []
         for item1 in self.data:
             if condition(item1):
@@ -103,12 +152,21 @@ class Table:
         return Table(self.table_name + '_filtered', data)
 
     def remove_data(self, x):
+        '''
+        Function to Remove Data from the Table
+        :param x: Index of Item to be removed
+        :return: Item That got removed
+        '''
         return self.__data.pop(x)
 
     def __str__(self):
         return f'{self.__table_name} : {self.__data}'
 
     def to_table(self):
+        '''
+        Function to Print Table Object in the organized table form
+        :return: Table string
+        '''
         # Get Longest Element of each rows
         spaces_key = {}
         for j in self.key:

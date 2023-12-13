@@ -136,8 +136,8 @@ def update_function(params):
         # Add Reviewer Ability
         if 'reviewer' in params[1]:
             func_dict.pop('Show Review Request')
-            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0], func_dict]]
-            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0], func_dict]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
 
         func_dict['Exit'] = [exit, [None]]
         return func_dict
@@ -151,8 +151,8 @@ def update_function(params):
                      }
         if 'reviewer' in params[1]:
             func_dict.pop('Show Review Request')
-            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0], func_dict]]
-            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0], func_dict]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
 
         func_dict['Exit'] = [exit, [None]]
         return func_dict
@@ -200,8 +200,8 @@ def update_function(params):
         # Add Reviewer Ability
         if 'reviewer' in params[1]:
             func_dict.pop('Show Review Request')
-            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0], func_dict]]
-            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0], func_dict]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
 
         func_dict['Exit'] = [exit, [None]]
         return func_dict
@@ -219,8 +219,8 @@ def update_function(params):
                      }
         # Add Reviewer Ability
         if 'reviewer' in params[1]:
-            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0], func_dict]]
-            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0], func_dict]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
         func_dict['Exit'] = [exit, [None]]
         return func_dict
 
@@ -253,8 +253,8 @@ def update_function(params):
                     rev_inv = (main_db.search('Pending_Reviewer_Request')
                                .filter(lambda x: x['ProjectID'] == committee['ProjectID']))
                     func_dict['Show Sent Request'] = [session.read_as_table,[params[0], rev_inv]]
-            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0], func_dict]]
-            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0], func_dict]]
+            func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
+            func_dict['Add Presentation Score'] = [session.add_present_score, [params[0]]]
         func_dict['Exit'] = [exit, [None]]
         return func_dict
 
@@ -295,17 +295,6 @@ def menu():
             if not score_dict:
                 print('No Score Sheet Found')
                 return
-            # Get Role of the person in committee
-            role = ''
-            if committee_filtered:
-                for i in committee_filtered.data[0]:
-                    if committee_filtered.data[0][i] == userid:
-                        role = i
-                        break
-            if not role.isspace():
-                session.update_review_status(score_dict[role], func_dict)
-                print(func_dict)
-
         print(f"Login as {userid}. Role: {r['role']}")
         select_dict = {}
         for i in range((len(list(func_dict.keys())))):
