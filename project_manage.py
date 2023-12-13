@@ -140,9 +140,6 @@ def update_function(params):
         # see and do member related activities
         func_dict = {'See Project Detail':
                          [session.show_user_project, [params[0]]],
-                     'Show Invitation':
-                         [session.response_request_menu, [params[0],
-                                                          main_db.search('Member_pending_request')]],
                      'Show Review Request':
                          [session.response_request_menu, [params[0],
                                                           main_db.search('Pending_Reviewer_Request')]]
@@ -175,9 +172,6 @@ def update_function(params):
                          [session.read_filtered_person, [params[0], 'type', 'faculty']],
                      'Request Advisor':
                          [session.request_advisor, [params[0]]],
-                     'Show Invitation':
-                         [session.response_request_menu, [params[0],
-                                                          main_db.search('Member_pending_request')]],
                      'Show Review Request':
                          [session.response_request_menu, [params[0],
                                                           main_db.search('Pending_Reviewer_Request')]],
@@ -213,7 +207,10 @@ def update_function(params):
                          [session.read_as_table, [params[0], main_db.search('Project')]],
                      'Show Request':
                          [session.response_request_menu, [params[0],
-                                                          main_db.search('Advisor_pending_request')]]
+                                                          main_db.search('Advisor_pending_request')]],
+                     'Show Review Request':
+                         [session.response_request_menu, [params[0],
+                                                          main_db.search('Pending_Reviewer_Request')]]
                      }
         # Add Reviewer Ability
         if 'reviewer' in params[1]:
@@ -326,7 +323,6 @@ def exit():
 
 # make calls to the initializing and login functions defined above
 initializing()
-print(main_db.search('login'))
 val = login()
 
 userid = val[0]

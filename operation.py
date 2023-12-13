@@ -72,6 +72,8 @@ class Session:
             table = self.db.search('login')
             if table:
                 user_dict = table.search('ID', uid)
+                if not user_dict:
+                    raise LookupError("User ID not found")
                 user_dict['role'] = new_role
                 self.role = new_role
 
@@ -102,6 +104,10 @@ class Session:
             for i in adv_acc_req.data:
                 pr_id = i['ProjectID']
                 project = pr_table.search('ProjectID', pr_id)
+                # Skip if Duplicates
+                uid = i['ReceiverID']
+                if all(project[j] != uid for j in project):
+                    continue
                 # Check if Any slot is empty and assign newly accept in
                 if project and project['Advisor'] == '':
                     pr_table.search('ProjectID', pr_id)['Advisor'] = i['ReceiverID']
@@ -119,6 +125,10 @@ class Session:
             for i in mem_acc_req.data:
                 pr_id = i['ProjectID']
                 project = pr_table.search('ProjectID', pr_id)
+                # Skip if duplicates
+                uid = i['ReceiverID']
+                if uid in list(project.values()):
+                    continue
                 if project:
                     # Check if Any slot is empty and assign newly accept in
                     if project['Member1'] == '':
@@ -146,17 +156,22 @@ class Session:
                 committee_dc = committee_tab.search('ProjectID', pr_id)
                 # Assign To Committee Table
                 if committee_dc:
+                    # Check if Assigned,if it duplicates skip
+                    if uid in (committee_dc.values()):
+                        continue
                     # Check if Any slot is empty and assign newly accept in
                     if self.__check_role(uid) in self.__faculty_role:
                         if committee_dc['Reviewer1'] == '':
                             committee_tab.search('ProjectID', pr_id)['Reviewer1'] = i['ReceiverID']
                         elif committee_dc['Reviewer2'] == '':
                             committee_tab.search('ProjectID', pr_id)['Reviewer2'] = i['ReceiverID']
-                        fac_pending = (rev_req.filter
-                                       (lambda x: x['ProjectID'] == pr_id
-                                        and self.__check_role(x['ReceiverID'] in self.__faculty_role)))
+
+                        fac_pending = (rev_req.filter(lambda x: x['ProjectID'] == pr_id
+                                                      and x['Response'] == 'Pending'
+                                                      and self.__check_role(x['ReceiverID'])
+                                                      in self.__faculty_role))
                         if fac_pending and not all(i == '' for i in fac_pending.data[0]):
-                            if committee_dc['Reviewer1'] != '' and committee_tab['Reviewer2'] != '':
+                            if committee_dc['Reviewer1'] != '' and committee_dc['Reviewer2'] != '':
                                 for j in fac_pending.data:
                                     if j['Response'] == 'Pending':
                                         j['Response'] = 'Expired'
@@ -173,11 +188,15 @@ class Session:
                             committee_tab.search('ProjectID', pr_id)['Student4'] = i['ReceiverID']
                         elif committee_dc['Student5'] == '':
                             committee_tab.search('ProjectID', pr_id)['Student5'] = i['ReceiverID']
-                        std_pending = rev_req.filter(lambda x: x['ProjectID'] == pr_id)
+
+                        std_pending = (rev_req.filter(lambda x: x['ProjectID'] == pr_id
+                                                     and x['Response'] == 'Pending'
+                                                     and self.__check_role(x['ReceiverID'])
+                                                     in self.__student_role))
                         check_ls = ['Student1', 'Student2', 'Student3', 'Student4', 'Student5']
                         # if all slot is occupied then change status to Expired
                         if std_pending and not all(i == '' for i in std_pending.data[0]):
-                            if all(std_pending.data[0] != '' for i in check_ls):
+                            if all(committee_dc[k] == '' for k in check_ls):
                                 for j in std_pending.data:
                                     if j['Response'] == 'Pending':
                                         j['Response'] = 'Expired'
@@ -200,7 +219,7 @@ class Session:
                 proj_cmm['Status'] = 'Completed'
                 for j in check_ls:
                     self.__update_role(proj_cmm[j],
-                                       self.__check_role(proj_cmm).removesuffix('/reviewer'))
+                                       self.__check_role(proj_cmm[j]).removesuffix('/reviewer'))
 
                 # Summarize Score
                 sum_score = 0
@@ -208,13 +227,13 @@ class Session:
                 for j in check_ls[0:3]:
                     ls = i[j].split(' + ')
                     for k in ls:
-                        sum_score += k * 2
+                        sum_score += int(k) * 2
 
                 # Student
                 for j in check_ls[0:3]:
                     ls = i[j].split(' + ')
                     for k in ls:
-                        sum_score += k / 8
+                        sum_score += int(k) / 8
 
                 if sum_score > 100:
                     sum_score = 100
@@ -222,22 +241,46 @@ class Session:
                 project_app = self.db.search("Pending_project_approval")
                 if not project_app:
                     raise LookupError("Table Not Found")
-                project_app = project_app.filter(lambda x: x['Response_date'] == '')
-                for j in project_app.search('ProjectID', i['ProjectID']):
-                    if sum_score >= 50:
-                        j['Response'] = 'Approved'
-                        project = self.db.search('Project')
-                        if project:
-                            p = project.search("ProjectID", i['ProjectID'])
-                            p['Status'] = 'Completed'
-                    else:
-                        j['Response'] = 'Denied'
-                    j['Response_date'] = self.time_format()
+                project_app = project_app.filter(lambda x: x['Response'] == 'Pending')
+                j = project_app.search('ProjectID', i['ProjectID'])
+                if sum_score >= 50:
+                    j['Response'] = 'Approved'
+                    project = self.db.search('Project')
+                    if project:
+                        p = project.search("ProjectID", i['ProjectID'])
+                        p['Status'] = 'Completed'
+                        self.__complete_project(p['ProjectID'])
+                else:
+                    j['Response'] = 'Denied'
+                j['Response_date'] = self.time_format()
 
+    def __complete_project(self, project_id):
+        p_table = self.db.search("Project")
+        if not p_table:
+            raise LookupError("Table Not Found")
+        project = p_table.search("ProjectID", project_id)
+        if not project:
+            raise LookupError("No Project Found")
+        # Set Student role to student
+        check_ls = ['Lead', 'Member1', 'Member2']
+        for i in check_ls:
+            if project[i] and not project[i].isspace():
+                self.__update_role(project[i], 'student')
+
+        # Handle Advisor Role(Return to Faculty if no more advising project)
+        uid = project['Advisor']
+        advise_tab = p_table.filter(lambda x: x['Advisor'] == uid)
+        if all(i == '' for i in advise_tab.data[0]):
+            raise LookupError("Something went wrong")
+        if len(advise_tab.data) > 1:
+            # Nothing will be done to Advisor Role
+            # Advisor still advising another project
+            return
+        else:
+            self.__update_role(uid,'faculty')
 
 ###############################################################################################
     # Admin Related Staff
-
     def read_all_db(self, uid):
         if uid != self.__uid or self.__role != 'admin':
             raise PermissionError()
@@ -332,14 +375,12 @@ class Session:
             dict_p = p_table.search('first', query)
             if dict_p:
                 return dict_p['ID']
-            # print('User not found')
             return None
         if mode == 'ID':
             dict_p = p_table.search('ID', query)
             if dict_p:
                 return query
         return None
-            # print('User not found')
 
     @property
     def role(self):
@@ -463,6 +504,9 @@ class Session:
                 # Find Project ID and Project Lead by UID
                 project_dict = pr_table.search('Lead', l_uid)
                 project_id = project_dict['ProjectID']
+                if uid in list(project_dict.values):
+                    print("This User already in your project")
+                    return
                 # Check if Duplicates
                 filtered_table = i_table.filter(lambda x: x['ProjectID'] == project_id)
                 filtered_table = filtered_table.filter(lambda x: x['ReceiverID'] == uid
@@ -596,6 +640,9 @@ class Session:
         if not table:
             raise LookupError("Table not found")
         pid = proj_detail['ProjectID']
+        if proj_detail['Advisor'].isspace():
+            print('No Advisor; Please Get an Advisor before submitting')
+            return
 
         # Currently Document stored as simple string to represent its filename
         doc = input('Insert Document: ')
@@ -733,6 +780,17 @@ class Session:
                 # Find Project ID and Project Lead by UID
                 project_dict = pr_table.search('Advisor', a_uid)
                 project_id = project_dict['ProjectID']
+
+                # Check if user already in committee
+                cmm_table = self.db.search('Project_Evaluate_Committee')
+                if cmm_table:
+                    cmm_table = cmm_table.filter(lambda x: x['ProjectID'] == project_id
+                                                 and x['Status'] != 'Completed')
+                    if uid in cmm_table.data[0].values():
+                        print("User Already in Committee")
+                        return
+
+
                 # Check if Duplicates
                 filtered_table = i_table.filter(lambda x: x['ProjectID'] == project_id)
                 filtered_table = filtered_table.filter(lambda x: x['ReceiverID'] == uid and x['Response'] == 'Pending')
@@ -760,7 +818,6 @@ class Session:
         sc_table = self.db.search('Project_Score_Result')
         if not sc_table:
             raise LookupError('Table Not Found')
-        print(cm_table)
         committee_filtered = cm_table.filter(lambda x:
                                              x['Advisor'] == uid or
                                              x['Reviewer1'] == uid or
@@ -770,12 +827,10 @@ class Session:
                                              x['Student3'] == uid or
                                              x['Student4'] == uid or
                                              x['Student5'] == uid)
-        print(committee_filtered)
         if all(i == '' for i in committee_filtered.data[0]):
             print('There are no Project Assign to You')
             return
         pid = committee_filtered.data[0]['ProjectID']
-        print(pid)
         score_dict = sc_table.search('ProjectID', pid)
         if not score_dict:
             print('No Score Sheet Found')
