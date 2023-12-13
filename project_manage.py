@@ -108,6 +108,11 @@ def login():
 ###################################################################################################
 # Decide Roles and its function
 def update_function(params):
+    '''
+    This Function will return function dict according to the role of the user
+    :param params: List include userID and role
+    :return: function dict
+    '''
     if 'admin' in params[1]:
         # see and do admin related activities
         return {'Read Data':
@@ -256,6 +261,11 @@ def update_function(params):
 
 # Print out menu and give user ability to use the program
 def menu():
+    '''
+    Function to using as a main menu of the application
+    This Function will call method inside Session Class
+    :return: None
+    '''
     while True:
         print()
         table = main_db.search('login')
@@ -316,6 +326,11 @@ def menu():
 
 ###################################################################################################
 def exit():
+    '''
+    Write Data in The Table into csv file
+    Exit the program
+    :return: None
+    '''
     for i in main_db.table_name():
         table = main_db.search(i)
         table.write_to_csv()
