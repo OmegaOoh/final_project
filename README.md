@@ -34,5 +34,9 @@
       - See request to be a supervisor
       - Send accept/deny response
       - Evaluate Project
+---
+## How to Use
+Login to the program and You can using the program to manage senior project as you want
+according to your role in the system.
 
 
