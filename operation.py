@@ -218,6 +218,9 @@ class Session:
     def __check_score(self):
         '''
         This method is used to Summarize score and update its status accordingly
+        Each Faculty Reviewer will give 30% of Score (3 Person)
+        Each Student will give only 2% of Score (5 Person)
+        The Project Need 50% To be Pass
         :return: None
         '''
         score_tab = self.db.search('Project_Score_Result')
@@ -250,7 +253,10 @@ class Session:
                 for j in check_ls[0:3]:
                     ls = i[j].split(' + ')
                     for k in ls:
-                        sum_score += int(k) / 8
+                        sd_score = int(k) / 8
+                        if sd_score > 2:
+                            sum_score = 2
+                        sum_score += sd_score
 
                 if sum_score > 100:
                     sum_score = 100
@@ -719,7 +725,7 @@ class Session:
         The Method to display the request menu
         and give user an ability to response it
         :param uid: UserID
-        :param table: Requst Table to Response
+        :param table: Request Table to Response
         :return: None
         '''
         if uid != self.__uid:
@@ -777,6 +783,12 @@ class Session:
                     return
 
     def submit(self, uid):
+        '''
+        Submit Document Name for Advisor to Evaluate
+        If Currently Don't Have the Advisor Reject The Submission
+        :param uid: User ID
+        :return: None
+        '''
         if uid != self.__uid:
             raise PermissionError("User ID Not Match")
         pr_table = self.db.search('Project')
@@ -804,6 +816,12 @@ class Session:
         table.insert(request)
 
     def advisor_evaluate(self, uid):
+        '''
+        Start Evaluation Process for the project (Advisor)
+        Add Committee and Score Element to its table
+        :param uid: User ID
+        :return: None
+        '''
         if uid != self.__uid:
             raise PermissionError("User ID Not Match")
         if 'advisor' not in self.role:
@@ -906,6 +924,11 @@ class Session:
             print('Invalid Input\n')
 
     def request_reviewer(self, a_uid):
+        '''
+        The Method for Advisor to Request a Reviewer's to help evaluate project
+        :param a_uid: UserID
+        :return: None
+        '''
         if a_uid != self.__uid:
             raise PermissionError("User ID Not Match")
         s_m = input('Search by Name or by ID \nSearch Mode: ')
@@ -958,7 +981,12 @@ class Session:
         else:
             print('No Receiver found')
 
-    def add_paper_score(self, uid, func_dict):
+    def add_paper_score(self, uid):
+        '''
+        Add Score for The Final Report Paper
+        :param uid: UserID
+        :return: None
+        '''
         if uid != self.__uid:
             raise PermissionError("User ID not Match")
         cm_table = self.db.search('Project_Evaluate_Committee')
@@ -1008,7 +1036,12 @@ class Session:
                 break
         self.__check_score()
 
-    def add_present_score(self, uid, func_dict):
+    def add_present_score(self, uid):
+        '''
+        Add Score for Project Presentation
+        :param uid: UserID
+        :return: None
+        '''
         if uid != self.__uid:
             raise PermissionError("User ID not Match")
         cm_table = self.db.search('Project_Evaluate_Committee')
