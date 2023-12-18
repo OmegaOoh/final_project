@@ -149,6 +149,7 @@ def update_function(params):
                          [session.response_request_menu, [params[0],
                                                           main_db.search('Pending_Reviewer_Request')]]
                      }
+
         if 'reviewer' in params[1]:
             func_dict.pop('Show Review Request')
             func_dict['Add Paper Score'] = [session.add_paper_score, [params[0]]]
@@ -164,7 +165,8 @@ def update_function(params):
                       .filter(lambda x: x['ProjectID'] == project['ProjectID']))
         advisor_inv = (main_db.search('Advisor_pending_request')
                        .filter(lambda x: x['ProjectID'] == project['ProjectID']))
-
+        approval_req =(main_db.search('Pending_project_approval')
+                       .filter(lambda x: x['ProjectID'] == project['ProjectID']))
         func_dict = {'Show Project Detail':
                          [session.show_user_project, [params[0]]],
                      'Modify Project Detail':
@@ -184,6 +186,8 @@ def update_function(params):
                          [session.read_as_table, [val[0], member_inv]],
                      'Show Sent Advisor Request':
                          [session.read_as_table, [val[0], advisor_inv]],
+                     'Show Approval Request':
+                         [session.read_as_table, [val[0], approval_req]],
                      'Submit':
                          [session.submit, [params[0]]]}
 
@@ -230,6 +234,9 @@ def update_function(params):
                      'Show Request':
                          [session.response_request_menu, [params[0],
                                                           main_db.search('Advisor_pending_request')]],
+                     'Show Review Request':
+                         [session.response_request_menu, [params[0],
+                                                          main_db.search('Pending_Reviewer_Request')]],
                      'Evaluate':
                          [session.advisor_evaluate, [params[0]]]}
         if 'reviewer' in params[1]:
